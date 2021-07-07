@@ -14,6 +14,7 @@ target_sources(Engine
 
 add_subdirectory(ThirdParty/EASTL)
 add_subdirectory(ThirdParty/EABase)
+add_subdirectory(ThirdParty/bgfx)
 
 GroupSources(${CMAKE_CURRENT_SOURCE_DIR})
 
