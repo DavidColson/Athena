@@ -4,6 +4,9 @@ project(Engine)
 include_directories("ThirdParty/")
 include_directories("ThirdParty/EASTL/include/")
 include_directories("ThirdParty/EABase/include/Common/")
+include_directories("ThirdParty/bgfx/bgfx/include/")
+include_directories("ThirdParty/bgfx/bx/include/")
+include_directories("ThirdParty/bgfx/bimg/include/")
 add_Library(Engine "")
 
 target_sources(Engine
@@ -20,7 +23,7 @@ GroupSources(${CMAKE_CURRENT_SOURCE_DIR})
 
 target_precompile_headers(Engine PRIVATE "PreCompiledHeader.h")
 
-target_link_libraries(Engine ${SDL2_LIBRARIES} EASTL)
+target_link_libraries(Engine ${SDL2_LIBRARIES} EASTL bgfx)
 
 if(MSVC)
   target_compile_options(Engine PRIVATE /W3 /WX)

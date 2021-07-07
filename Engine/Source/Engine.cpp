@@ -1,6 +1,9 @@
 #include "Engine.h"
 
 #include <SDL.h>
+#include <SDL_syswm.h>
+#include <bgfx/bgfx.h>
+#include <bgfx/platform.h>
 
 void MakeWindow()
 {
@@ -13,10 +16,32 @@ void MakeWindow()
 		SDL_WINDOW_RESIZABLE
 	);
 
-    bool gameRunning = true;
+	bgfx::renderFrame();
 
+	SDL_SysWMinfo wmInfo;
+	SDL_VERSION(&wmInfo.version);
+	SDL_GetWindowWMInfo(pWindow, &wmInfo);
+	HWND hwnd = wmInfo.info.win.window;
+
+	bgfx::Init init;
+	init.platformData.ndt = NULL;
+	init.platformData.nwh = wmInfo.info.win.window;
+
+	bgfx::init(init);
+	const bgfx::ViewId kClearView = 0;
+	bgfx::setViewClear(kClearView, BGFX_CLEAR_COLOR);
+	bgfx::setViewRect(kClearView, 0, 0, bgfx::BackbufferRatio::Equal);
+	bgfx::reset(800, 500, BGFX_RESET_VSYNC);
+    bool gameRunning = true;
     while (gameRunning)
 	{
+		bgfx::touch(kClearView);
+
+		bgfx::dbgTextClear();
+		bgfx::dbgTextPrintf(10, 10, 0x0f, "Hello world");
+		bgfx::setDebug(BGFX_DEBUG_TEXT);
+		bgfx::frame();
+
 		// Deal with events
 		SDL_Event event;
 		while (SDL_PollEvent(&event))
@@ -39,4 +64,5 @@ void MakeWindow()
 			}
 		}
     }
+	bgfx::shutdown();
 }
