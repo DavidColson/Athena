@@ -4,9 +4,9 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "label": "Run Cmake Debug Build",
+            "label": "Build Debug",
             "type": "shell",
-            "command": "cmake --build Build/ --config Debug",
+            "command": "msbuild Build/vs2019/Athena.sln -p:Configuration=Debug",
             "group": {
                 "kind": "build",
                 "isDefault": true
@@ -16,9 +16,25 @@
             ]
         },
         {
-            "label": "Run Cmake Release Build",
+            "label": "Build Release",
             "type": "shell",
-            "command": "cmake --build Build/ --config Release",
+            "command": "msbuild Build/vs2019/Athena.sln -p:Configuration=Release",
+            "problemMatcher": [
+                "$msCompile"
+            ]
+        },
+        {
+            "label": "Rebuild Debug",
+            "type": "shell",
+            "command": "msbuild Build/vs2019/Athena.sln -p:Configuration=Debug -t:Rebuild",
+            "problemMatcher": [
+                "$msCompile"
+            ]
+        },
+        {
+            "label": "Rebuild Release",
+            "type": "shell",
+            "command": "msbuild Build/vs2019/Athena.sln -p:Configuration=Release -t:Rebuild",
             "problemMatcher": [
                 "$msCompile"
             ]

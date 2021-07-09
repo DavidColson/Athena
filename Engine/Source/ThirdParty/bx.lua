@@ -1,4 +1,6 @@
 
+group "ThirdParty/bx"
+
 project "bx"
     kind "StaticLib"
     language "C++"

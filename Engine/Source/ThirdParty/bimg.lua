@@ -1,4 +1,6 @@
 
+group "ThirdParty/bimg"
+
 project "bimg"
     kind "StaticLib"
     language "C++"
