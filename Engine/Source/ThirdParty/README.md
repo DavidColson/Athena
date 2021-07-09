@@ -16,7 +16,23 @@ Exact mirror of upstream repo.
 
 ## bgfx
 
-- Source: https://github.com/bkaradzic/bgfx.cmake
-- Version: Pulled at change 86b4b5a (bgfx d95a643, bimg 8355d36, bx 51f25ba)
+- Source: https://github.com/bkaradzic/bgfx
+- Version: Pulled at change d95a6436
 
-Same as in repo, but removed examples, geometry and texture viewers and compilers and related dependencies (meshoptimizer, imgui, cgltf, sdf, iconfontheaders, stb)
+Stripped out examples, build scripts, github files
+
+## bimg
+
+- Source: https://github.com/bkaradzic/bimg
+- Version: Pulled at change 8355d36b
+
+Stripped out build scripts and github files
+
+## bx
+
+- Source: https://github.com/bkaradzic/bx
+- Version: Pulled at change 51f25ba6
+
+Stripped out tests and catch dependency, all build scripts and github files leaving just the code required to run and the license
+
+
