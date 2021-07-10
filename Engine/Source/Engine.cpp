@@ -1,12 +1,23 @@
+// Copyright 2020-2021 David Colson. All rights reserved.
+
 #include "Engine.h"
+
+#include "Log.h"
+#include "Memory.h"
 
 #include <SDL.h>
 #include <SDL_syswm.h>
 #include <bgfx/bgfx.h>
 #include <bgfx/platform.h>
+#include <EASTL/vector.h>
+
 
 void MakeWindow()
 {
+	eastl::vector<float> vec;
+	
+	An::Log::Debug("Hello");
+
     SDL_Window* pWindow = SDL_CreateWindow(
 		"Flight Game",
 		SDL_WINDOWPOS_UNDEFINED,
@@ -39,7 +50,7 @@ void MakeWindow()
 
 		bgfx::dbgTextClear();
 		bgfx::dbgTextPrintf(10, 10, 0x0f, "Hello world");
-		bgfx::setDebug(BGFX_DEBUG_TEXT);
+		//bgfx::setDebug(BGFX_DEBUG_TEXT);
 		bgfx::frame();
 
 		// Deal with events

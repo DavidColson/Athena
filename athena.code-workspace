@@ -7,7 +7,9 @@
 	"settings": {
 		"files.associations": {
 			"*.lvl": "json5",
-			"*.idl": "cpp"
+			"*.idl": "cpp",
+			"fstream": "cpp",
+			"regex": "cpp"
 		}
 	}
 }

@@ -4,20 +4,25 @@
 project "Engine"
     kind "StaticLib"
     language "C++"
-    cppdialect "C++14"
+    cppdialect "C++17"
     exceptionhandling "Off"
     rtti "Off"
     files 
     {
         "Source/*.cpp",
-        "Source/*.h"
+        "Source/*.h",
+        "Source/Core/**.cpp",
+        "Source/Core/**.h",
     }
     includedirs
     {
         "Source/",
+        "Source/Core",
         "Source/ThirdParty/bgfx/include",
         "Source/ThirdParty/bimg/include",
         "Source/ThirdParty/bx/include",
+        "Source/ThirdParty/EABase/include/Common",
+        "Source/ThirdParty/EASTL/include",
         "Lib/SDL2-2.0.8/include",
     }
     defines 
