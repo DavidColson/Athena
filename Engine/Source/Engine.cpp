@@ -2,8 +2,10 @@
 
 #include "Engine.h"
 
-#include "Log.h"
-#include "Memory.h"
+#include "Core/Log.h"
+#include "Core/Memory.h"
+#include "AssetDatabase/AssetDatabase.h"
+#include "AssetDatabase/Text.h"
 
 #include <SDL.h>
 #include <SDL_syswm.h>

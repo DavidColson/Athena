@@ -13,11 +13,12 @@ project "Engine"
         "Source/*.h",
         "Source/Core/**.cpp",
         "Source/Core/**.h",
+        "Source/AssetDatabase/**.cpp",
+        "Source/AssetDatabase/**.h",
     }
     includedirs
     {
         "Source/",
-        "Source/Core",
         "Source/ThirdParty/bgfx/include",
         "Source/ThirdParty/bimg/include",
         "Source/ThirdParty/bx/include",

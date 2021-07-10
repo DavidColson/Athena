@@ -2,8 +2,9 @@
 
 #include "FileStream.h"
 
+#include "Core/Log.h"
+
 #include <SDL_rwops.h>
-#include <Log.h>
 
 namespace An
 {
