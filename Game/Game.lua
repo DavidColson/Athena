@@ -1,7 +1,7 @@
 project "Game"
 	kind "WindowedApp"
 	language "C++"
-	cppdialect "C++14"
+	cppdialect "C++17"
 	exceptionhandling "Off"
 	rtti "Off"
     debugdir "../"
@@ -14,9 +14,20 @@ project "Game"
 	{
 		"../Engine/Source",
 		"../Engine/Lib/SDL2-2.0.8/include",
+        "../Engine/ThirdParty/EABase/include",
+        "../Engine/ThirdParty/EASTL/include",
         "Source/"
 	}
-    links { "Engine", "bgfx", "bimg", "bx", "SDL2", "SDL2main" }
+    links 
+	{ 
+		"Engine",
+		"bgfx",
+		"bimg",
+		"bx",
+		"SDL2",
+		"SDL2main",
+		"EASTL"
+	}
     filter "platforms:x86_64"
         libdirs { "../Engine/Lib/SDL2-2.0.8/lib/x64" }
     filter "platforms:x86"

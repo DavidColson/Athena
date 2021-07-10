@@ -47,5 +47,7 @@ solution "Athena"
     dofile("Engine/Source/ThirdParty/bx.lua")
     dofile("Engine/Source/ThirdParty/bimg.lua")
     dofile("Engine/Source/ThirdParty/bgfx.lua")
+    dofile("Engine/Source/ThirdParty/EABase.lua")
+    dofile("Engine/Source/ThirdParty/EASTL.lua")
     dofile("Engine/Engine.lua")
     dofile("Game/Game.lua")

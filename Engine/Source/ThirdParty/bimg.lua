@@ -31,3 +31,5 @@ project "bimg"
 	filter { "system:macosx" }
 		includedirs { "bx/include/compat/osx" }
 		buildoptions { "-x objective-c++" }
+
+group ""
