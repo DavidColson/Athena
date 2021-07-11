@@ -9,7 +9,8 @@
 			"*.lvl": "json5",
 			"*.idl": "cpp",
 			"fstream": "cpp",
-			"regex": "cpp"
+			"regex": "cpp",
+			"cmath": "cpp"
 		}
 	}
 }
