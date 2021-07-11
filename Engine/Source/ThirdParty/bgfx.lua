@@ -506,7 +506,7 @@ project "glsl-optimizer"
 group "ThirdParty/bgfx/tools"
 
 project "shaderc"
-    kind "ConsoleApp"
+    kind "StaticLib"
     language "C++"
     cppdialect "C++14"
     exceptionhandling "Off"
@@ -554,6 +554,8 @@ project "shaderc"
 		"__STDC_FORMAT_MACROS",
 		"__STDC_CONSTANT_MACROS",
 	}
+	filter "kind:StaticLib"
+		defines { "BGFX_SHADERC_LIB" }
     filter "action:vs*"
         defines "_CRT_SECURE_NO_WARNINGS"
         includedirs {

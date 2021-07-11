@@ -271,16 +271,6 @@ namespace bgfx
 		NULL
 	};
 
-	const char* s_uniformTypeName[] =
-	{
-		"int",  "int",
-		NULL,   NULL,
-		"vec4", "float4",
-		"mat3", "float3x3",
-		"mat4", "float4x4",
-	};
-	BX_STATIC_ASSERT(BX_COUNTOF(s_uniformTypeName) == UniformType::Count*2);
-
 	static const char* s_allowedVertexShaderInputs[] =
 	{
 		"a_position",
@@ -400,31 +390,6 @@ namespace bgfx
 		}
 
 		return _glsl; // centroid, noperspective
-	}
-
-	const char* getUniformTypeName(UniformType::Enum _enum)
-	{
-		uint32_t idx = _enum & ~(kUniformFragmentBit|kUniformSamplerBit);
-		if (idx < UniformType::Count)
-		{
-			return s_uniformTypeName[idx];
-		}
-
-		return "Unknown uniform type?!";
-	}
-
-	UniformType::Enum nameToUniformTypeEnum(const char* _name)
-	{
-		for (uint32_t ii = 0; ii < UniformType::Count*2; ++ii)
-		{
-			if (NULL != s_uniformTypeName[ii]
-			&&  0 == bx::strCmp(_name, s_uniformTypeName[ii]) )
-			{
-				return UniformType::Enum(ii/2);
-			}
-		}
-
-		return UniformType::Count;
 	}
 
 	int32_t writef(bx::WriterI* _writer, const char* _format, ...)
@@ -2790,7 +2755,248 @@ namespace bgfx
 
 } // namespace bgfx
 
+#ifndef BGFX_SHADERC_LIB
+namespace shaderc
+{
+	const bgfx::Memory* compileShader(
+            ShaderType type
+          , const char* filePath
+          , const char* defines = nullptr
+          , const char* varyingPath = nullptr
+          , const char* profile = nullptr
+          )
+	{
+		
+	}
+}
+
 int main(int _argc, const char* _argv[])
 {
 	return bgfx::compileShader(_argc, _argv);
 }
+
+#else
+namespace shaderc
+{
+	using namespace bgfx;
+	
+    /// not a real FileWriter, but a hack to redirect write() to a memory block.
+    class BufferWriter : public bx::FileWriter
+    {
+    public:
+
+        BufferWriter()
+        {
+        }
+
+        ~BufferWriter()
+        {
+        }
+
+        bool open(const bx::FilePath& _filePath, bool _append, bx::Error* _err) override
+        {
+            return true;
+        }
+
+        const bgfx::Memory* finalize()
+        {
+            if(_buffer.size() > 0)
+            {
+                _buffer.push_back('\0');
+
+                const bgfx::Memory* mem = bgfx::alloc(uint32_t(_buffer.size()));
+                bx::memCopy(mem->data, _buffer.data(), _buffer.size());
+                return mem;
+            }
+
+            return nullptr;
+        }
+
+        int32_t write(const void* _data, int32_t _size, bx::Error* _err)
+        {
+            const char* data = (const char*)_data;
+            _buffer.insert(_buffer.end(), data, data+_size);
+            return _size;
+        }
+
+    private:
+        BX_ALIGN_DECL(16, uint8_t) m_internal[64];
+        typedef std::vector<uint8_t> Buffer;
+        Buffer _buffer;
+    };
+
+
+
+    const bgfx::Memory* compileShader(ShaderType type, const char* filePath, const char* defines, const char* varyingPath, const char* profile)
+    {
+        bgfx::Options options;
+
+        options.inputFilePath = filePath;
+        options.shaderType = type;
+
+        // set platform
+#if BX_PLATFORM_LINUX
+        options.platform = "linux";
+#elif BX_PLATFORM_WINDOWS
+        options.platform = "windows";
+#elif BX_PLATFORM_ANDROID
+        options.platform = "android";
+#elif BX_PLATFORM_EMSCRIPTEN
+        options.platform = "asm.js";
+#elif BX_PLATFORM_IOS
+        options.platform = "ios";
+#elif BX_PLATFORM_OSX
+        options.platform = "osx";
+#endif
+
+        // set profile
+        if(profile)
+        {
+            // user profile
+            options.profile = profile;
+        }
+        else
+        {
+            // set default profile for current running renderer.
+
+            bgfx::RendererType::Enum renderType = bgfx::getRendererType();
+
+            switch(renderType)
+            {
+            default:
+            case bgfx::RendererType::Noop:         //!< No rendering.
+                break;
+            case bgfx::RendererType::Direct3D9:    //!< Direct3D 9.0
+            {
+                if(type == 'v')
+                    options.profile = "vs_3_0";
+                else if(type == 'f')
+                    options.profile = "ps_3_0";
+                else if(type == 'c')
+                    options.profile = "ps_3_0";
+            }
+            break;
+            case bgfx::RendererType::Direct3D11:   //!< Direct3D 11.0
+            {
+                if(type == 'v')
+                    options.profile = "vs_4_0";
+                else if(type == 'f')
+                    options.profile = "ps_4_0";
+                else if(type == 'c')
+                    options.profile = "cs_5_0";
+            }
+            break;
+            case bgfx::RendererType::Direct3D12:   //!< Direct3D 12.0
+            {
+                if(type == 'v')
+                    options.profile = "vs_5_0";
+                else if(type == 'f')
+                    options.profile = "ps_5_0";
+                else if(type == 'c')
+                    options.profile = "cs_5_0";
+            }
+            case bgfx::RendererType::Gnm:          //!< GNM
+                break;
+            case bgfx::RendererType::Metal:        //!< Metal
+                break;
+            case bgfx::RendererType::OpenGLES:     //!< OpenGL ES 2.0+
+                break;
+            case bgfx::RendererType::OpenGL:       //!< OpenGL 2.1+
+            {
+                if(type == 'v' || type == 'f')
+                    options.profile = "120";
+                else if(type == 'c')
+                    options.profile = "430";
+            }
+            break;
+            case bgfx::RendererType::Vulkan:       //!< Vulkan
+                break;
+            };
+        }
+
+
+        // include current dir
+        std::string dir;
+        {
+            bx::FilePath fp(filePath);
+            bx::StringView path(fp.getPath() );
+
+            dir.assign(path.getPtr(), path.getTerm() );
+            options.includeDirs.push_back(dir);
+        }
+
+        // set defines
+        while (NULL != defines
+        &&    '\0'  != *defines)
+        {
+            defines = bx::strLTrimSpace(defines).getPtr();
+            bx::StringView eol = bx::strFind(defines, ';');
+            std::string define(defines, eol.getPtr() );
+            options.defines.push_back(define.c_str() );
+            defines = ';' == *eol.getPtr() ? eol.getPtr()+1 : eol.getPtr();
+        }
+
+
+        // set varyingdef
+        std::string defaultVarying = dir + "varying.def.sc";
+        const char* varyingdef = varyingPath ? varyingPath : defaultVarying.c_str();
+        bgfx::File attribdef;
+		attribdef.load(varyingdef);
+        const char* parse = attribdef.getData();
+        if (NULL != parse
+        &&  *parse != '\0')
+        {
+            options.dependencies.push_back(varyingdef);
+        }
+        else
+        {
+            fprintf(stderr, "ERROR: Failed to parse varying def file: \"%s\" No input/output semantics will be generated in the code!\n", varyingdef);
+            return nullptr;
+        }
+
+
+
+        // read shader source file
+        bx::FileReader reader;
+        if (!bx::open(&reader, filePath) )
+        {
+            fprintf(stderr, "Unable to open file '%s'.\n", filePath);
+            return nullptr;
+        }
+
+        // add padding
+        const size_t padding    = 16384;
+        uint32_t size = (uint32_t)bx::getSize(&reader);
+        char* data = new char[size+padding+1];
+        size = (uint32_t)bx::read(&reader, data, size);
+
+        if (data[0] == '\xef'
+        &&  data[1] == '\xbb'
+        &&  data[2] == '\xbf')
+        {
+            bx::memMove(data, &data[3], size-3);
+            size -= 3;
+        }
+
+        // Compiler generates "error X3000: syntax error: unexpected end of file"
+        // if input doesn't have empty line at EOF.
+        data[size] = '\n';
+        bx::memSet(&data[size+1], 0, padding);
+        bx::close(&reader);
+
+
+        std::string commandLineComment = "// shaderc command line:\n";
+
+        // compile shader.
+
+        BufferWriter writer;
+        if ( bgfx::compileShader(attribdef.getData(), commandLineComment.c_str(), data, size, options, &writer) )
+        {
+            // this will copy the compiled shader data to a memory block and return mem ptr
+            return writer.finalize();
+        }
+
+        return nullptr;
+    }
+}
+#endif

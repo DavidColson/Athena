@@ -22,6 +22,7 @@ project "Game"
 	{ 
 		"Engine",
 		"bgfx",
+		"shaderc",
 		"bimg",
 		"bx",
 		"SDL2",
