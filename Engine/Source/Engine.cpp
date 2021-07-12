@@ -15,7 +15,6 @@
 #include <EASTL/vector.h>
 
 #include <shaderc/shaderc.h>
-#include <bx/bx.h>
 
 // This defines a macro called min somehow? We should avoid it at all costs and include it last
 #include <SDL_syswm.h>
@@ -27,23 +26,29 @@ struct PosColVert
 
 	static void init()
 	{
-		ms_layout
+		posLayout
 			.begin()
 			.add(bgfx::Attrib::Position, 3, bgfx::AttribType::Float)
-			.add(bgfx::Attrib::Color0,   4, bgfx::AttribType::Uint8, true)
+			.end();
+
+		colLayout
+			.begin()
+			.add(bgfx::Attrib::Color0, 4, bgfx::AttribType::Uint8, true)
 			.end();
 	};
 
-	static bgfx::VertexLayout ms_layout;
+	static bgfx::VertexLayout posLayout;
+	static bgfx::VertexLayout colLayout;
 };
-bgfx::VertexLayout PosColVert::ms_layout;
+bgfx::VertexLayout PosColVert::posLayout;
+bgfx::VertexLayout PosColVert::colLayout;
 
 void MakeWindow()
 {
 	eastl::vector<float> vec;
 	
-	int winWidth = 1200;
-	int winHeight = 800;
+	int winWidth = 1600;
+	int winHeight = 900;
 
 	An::Log::Debug("Hello");
 
@@ -79,24 +84,39 @@ void MakeWindow()
 	// Create cube input layout
 	PosColVert::init();
 	
-	eastl::vector<PosColVert> verts = {
-		{ Vec3f(-1.0f, -1.0f,  1.0f), 0xff000000 }, // Front bottom left
-        { Vec3f( 1.0f, -1.0f,  1.0f), 0xff0000ff }, // Front bottom right
-        { Vec3f(-1.0f,  1.0f,  1.0f), 0xff00ff00 }, // Front top left
-        { Vec3f( 1.0f,  1.0f,  1.0f), 0xff00ffff }, // Front 
+	eastl::vector<Vec3f> verts = {
+		Vec3f(-1.0f, -1.0f,  1.0f), // Front bottom left
+        Vec3f( 1.0f, -1.0f,  1.0f), // Front bottom right
+        Vec3f(-1.0f,  1.0f,  1.0f), // Front top left
+        Vec3f( 1.0f,  1.0f,  1.0f), // Front 
 
-       	{ Vec3f(-1.0f, -1.0f, -1.0f), 0xffff0000 }, // Back bottom left
-        { Vec3f( 1.0f, -1.0f, -1.0f), 0xffff00ff }, // Back bottom right
-        { Vec3f(-1.0f,  1.0f, -1.0f), 0xffffff00 }, // Back top left
-        { Vec3f( 1.0f,  1.0f, -1.0f), 0xffffff00 }  // Back top right
+       	Vec3f(-1.0f, -1.0f, -1.0f), // Back bottom left
+        Vec3f( 1.0f, -1.0f, -1.0f), // Back bottom right
+        Vec3f(-1.0f,  1.0f, -1.0f), // Back top left
+        Vec3f( 1.0f,  1.0f, -1.0f)  // Back top right
+    };
+
+	eastl::vector<uint32_t> vertCols = {
+		0xff000000, // Front bottom left
+        0xff0000ff, // Front bottom right
+        0xff00ff00, // Front top left
+        0xff00ffff, // Front 
+
+       	0xffff0000, // Back bottom left
+        0xffff00ff, // Back bottom right
+        0xffffff00, // Back top left
+        0xffffff00  // Back top right
     };
 
 	eastl::vector<uint16_t> indices = {
 		0, 1, 2, 3, 7, 1, 5, 4, 7, 6, 2, 4, 0, 1
 	};
 
-	uint32_t vbsize = uint32_t(sizeof(PosColVert) * verts.size());
-	bgfx::VertexBufferHandle vbh = bgfx::createVertexBuffer(bgfx::makeRef(verts.data(), vbsize), PosColVert::ms_layout);
+	uint32_t vbsize = uint32_t(sizeof(Vec3f) * verts.size());
+	bgfx::VertexBufferHandle vPosHandle = bgfx::createVertexBuffer(bgfx::makeRef(verts.data(), vbsize), PosColVert::posLayout);
+
+	uint32_t vsize = uint32_t(sizeof(uint32_t) * vertCols.size());
+	bgfx::VertexBufferHandle vColHandle = bgfx::createVertexBuffer(bgfx::makeRef(vertCols.data(), vsize), PosColVert::colLayout);
 	
 	uint32_t ibsize = uint32_t(sizeof(uint16_t) * indices.size());
 	bgfx::IndexBufferHandle ibh = bgfx::createIndexBuffer(bgfx::makeRef(indices.data(), ibsize));
@@ -110,8 +130,8 @@ void MakeWindow()
 	{
 		bgfx::touch(kClearView);
 		
-		// TODO: Play around with vertex buffer streams so we can separate colour and position in the input layout
-		Matrixf camera = Matrixf::MakeTranslation(Vec3f(0.0f, 0.0f, 20.0f));
+		// TODO: Play around with vertex buffer streams so we can separate colour and position in the input layout (note: see mvs demo)
+		Matrixf camera = Matrixf::MakeTranslation(Vec3f(0.0f, 0.0f, 5.0f));
 		Matrixf project = Matrixf::Perspective((float)winWidth, (float)winHeight, 0.1f, 100.0f, 60.0f);
 
 		bgfx::setViewTransform(0, &camera, &project);
@@ -128,14 +148,14 @@ void MakeWindow()
 				| BGFX_STATE_MSAA
 				| BGFX_STATE_PT_TRISTRIP;
 
-		float mtx[16];
-		bx::mtxRotateXY(mtx, 0.21f, 0.37f);
+		Matrixf rotate = Matrixf::MakeRotation(Vec3f(-0.25f, -0.37f, 0.0f));
 
 		// Set model matrix for rendering.
-		bgfx::setTransform(mtx);
+		bgfx::setTransform(&rotate);
 
 
-		bgfx::setVertexBuffer(0, vbh);
+		bgfx::setVertexBuffer(0, vPosHandle);
+		bgfx::setVertexBuffer(1, vColHandle);
 		bgfx::setIndexBuffer(ibh);
 		bgfx::setState(state);
 		bgfx::submit(0, program);
