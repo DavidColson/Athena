@@ -7,6 +7,7 @@
 #include "AssetDatabase/AssetDatabase.h"
 #include "AssetDatabase/Text.h"
 #include "AssetDatabase/Shader.h"
+#include "AssetDatabase/Mesh.h"
 #include "Core/Vec3.h"
 #include "Core/Matrix.h"
 
@@ -80,44 +81,8 @@ void MakeWindow()
 	An::AssetHandle cubesFragShader = An::AssetHandle("Engine/Shaders/cubes.fs");
 	
 	// Create cube input layout
-	PosColVert::init();
-	
-	eastl::vector<Vec3f> verts = {
-		Vec3f(-1.0f, -1.0f,  1.0f), // Front bottom left
-        Vec3f( 1.0f, -1.0f,  1.0f), // Front bottom right
-        Vec3f(-1.0f,  1.0f,  1.0f), // Front top left
-        Vec3f( 1.0f,  1.0f,  1.0f), // Front 
-
-       	Vec3f(-1.0f, -1.0f, -1.0f), // Back bottom left
-        Vec3f( 1.0f, -1.0f, -1.0f), // Back bottom right
-        Vec3f(-1.0f,  1.0f, -1.0f), // Back top left
-        Vec3f( 1.0f,  1.0f, -1.0f)  // Back top right
-    };
-
-	eastl::vector<uint32_t> vertCols = {
-		0xff000000, // Front bottom left
-        0xff0000ff, // Front bottom right
-        0xff00ff00, // Front top left
-        0xff00ffff, // Front 
-
-       	0xffff0000, // Back bottom left
-        0xffff00ff, // Back bottom right
-        0xffffff00, // Back top left
-        0xffffff00  // Back top right
-    };
-
-	eastl::vector<uint16_t> indices = {
-		0, 1, 2, 3, 7, 1, 5, 4, 7, 6, 2, 4, 0, 1
-	};
-
-	uint32_t vbsize = uint32_t(sizeof(Vec3f) * verts.size());
-	bgfx::VertexBufferHandle vPosHandle = bgfx::createVertexBuffer(bgfx::makeRef(verts.data(), vbsize), PosColVert::posLayout);
-
-	uint32_t vsize = uint32_t(sizeof(uint32_t) * vertCols.size());
-	bgfx::VertexBufferHandle vColHandle = bgfx::createVertexBuffer(bgfx::makeRef(vertCols.data(), vsize), PosColVert::colLayout);
-	
-	uint32_t ibsize = uint32_t(sizeof(uint16_t) * indices.size());
-	bgfx::IndexBufferHandle ibh = bgfx::createIndexBuffer(bgfx::makeRef(indices.data(), ibsize));
+	An::Primitive::InitPrimitiveLayouts();
+	An::Primitive cube = An::Primitive::NewCube();
 
 	bgfx::ProgramHandle program = bgfx::createProgram(An::AssetDB::GetAsset<An::Shader>(cubesVertShader)->m_handle, An::AssetDB::GetAsset<An::Shader>(cubesFragShader)->m_handle, false);
 
@@ -151,10 +116,9 @@ void MakeWindow()
 		// Set model matrix for rendering.
 		bgfx::setTransform(&rotate);
 
-
-		bgfx::setVertexBuffer(0, vPosHandle);
-		bgfx::setVertexBuffer(1, vColHandle);
-		bgfx::setIndexBuffer(ibh);
+		bgfx::setVertexBuffer(0, cube.m_vertexBuffer);
+		bgfx::setVertexBuffer(1, cube.m_colorBuffer);
+		bgfx::setIndexBuffer(cube.m_indexBuffer);
 		bgfx::setState(state);
 		bgfx::submit(0, program);
 
@@ -185,5 +149,6 @@ void MakeWindow()
 			}
 		}
     }
+	cube.Destroy();
 	bgfx::shutdown();
 }

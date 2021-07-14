@@ -10,7 +10,32 @@
 			"*.idl": "cpp",
 			"fstream": "cpp",
 			"regex": "cpp",
-			"cmath": "cpp"
+			"cmath": "cpp",
+			"array": "cpp",
+			"deque": "cpp",
+			"forward_list": "cpp",
+			"initializer_list": "cpp",
+			"list": "cpp",
+			"vector": "cpp",
+			"xhash": "cpp",
+			"xstring": "cpp",
+			"xtree": "cpp",
+			"xutility": "cpp",
+			"future": "cpp",
+			"locale": "cpp",
+			"memory": "cpp",
+			"ostream": "cpp",
+			"system_error": "cpp",
+			"typeindex": "cpp",
+			"xlocale": "cpp",
+			"xlocinfo": "cpp",
+			"xlocnum": "cpp",
+			"xloctime": "cpp",
+			"xstddef": "cpp",
+			"xxatomic": "cpp",
+			"*.rh": "cpp",
+			"tuple": "cpp",
+			"variant": "cpp"
 		}
 	}
 }
