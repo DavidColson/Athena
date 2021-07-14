@@ -4,6 +4,7 @@
 
 #include "Core/Log.h"
 #include "Text.h"
+#include "Shader.h"
 #include "Core/FileSystem.h"
 
 #include <EASTL/map.h>
@@ -169,6 +170,10 @@ namespace An
         if (fileType == ".txt")
         {
             asset.m_pAssetData = new Text();
+        }
+        if (fileType == ".fs" || fileType == ".vs")
+        {
+            asset.m_pAssetData = new Shader();
         }
         else
         {

@@ -6,6 +6,7 @@
 #include "Core/Memory.h"
 #include "AssetDatabase/AssetDatabase.h"
 #include "AssetDatabase/Text.h"
+#include "AssetDatabase/Shader.h"
 #include "Core/Vec3.h"
 #include "Core/Matrix.h"
 
@@ -75,12 +76,9 @@ void MakeWindow()
 	const bgfx::ViewId kClearView = 0;
 	bgfx::setViewClear(kClearView, BGFX_CLEAR_COLOR | BGFX_CLEAR_DEPTH, 0x404040ff, 1.0f, 0);
 
-	const bgfx::Memory* memVs = shaderc::compileShader(shaderc::ST_VERTEX, "Engine/Shaders/cubes.vs", "", "Engine/Shaders/varying.def.sc");
-	bgfx::ShaderHandle vsh = bgfx::createShader(memVs);
-
-	const bgfx::Memory* memFs = shaderc::compileShader(shaderc::ST_FRAGMENT, "Engine/Shaders/cubes.fs", "", "Engine/Shaders/varying.def.sc");
-	bgfx::ShaderHandle fsh = bgfx::createShader(memFs);
-
+	An::AssetHandle cubesVertShader = An::AssetHandle("Engine/Shaders/cubes.vs");
+	An::AssetHandle cubesFragShader = An::AssetHandle("Engine/Shaders/cubes.fs");
+	
 	// Create cube input layout
 	PosColVert::init();
 	
@@ -121,7 +119,7 @@ void MakeWindow()
 	uint32_t ibsize = uint32_t(sizeof(uint16_t) * indices.size());
 	bgfx::IndexBufferHandle ibh = bgfx::createIndexBuffer(bgfx::makeRef(indices.data(), ibsize));
 
-	bgfx::ProgramHandle program = bgfx::createProgram(vsh, fsh, true);
+	bgfx::ProgramHandle program = bgfx::createProgram(An::AssetDB::GetAsset<An::Shader>(cubesVertShader)->m_handle, An::AssetDB::GetAsset<An::Shader>(cubesFragShader)->m_handle, false);
 
 	bgfx::setViewRect(kClearView, 0, 0, winWidth, winHeight);
 	bgfx::reset(winWidth, winHeight, BGFX_RESET_VSYNC);
