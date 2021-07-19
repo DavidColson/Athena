@@ -6,10 +6,14 @@
 
 namespace An
 {
+	// ***********************************************************************
+
     Shader::Shader()
     {
         bOverrideReload = true;
     }
+
+	// ***********************************************************************
 
     void Shader::Load(Path path, AssetHandle handleForThis)
     {
@@ -37,6 +41,8 @@ namespace An
         }
     }
 
+	// ***********************************************************************
+
     void Shader::Reload(Path path, AssetHandle handleForThis)
     {
         const bgfx::Memory* pNewShaderMem = nullptr;
@@ -58,6 +64,8 @@ namespace An
             m_handle = bgfx::createShader(pNewShaderMem);
         }
     }
+
+	// ***********************************************************************
 
     Shader::~Shader()
     {

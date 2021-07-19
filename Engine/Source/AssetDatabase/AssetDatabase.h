@@ -67,6 +67,8 @@ namespace An
         
         bool IsSubasset(AssetHandle handle);
 
+        void RegisterSubasset(Asset* pAsset, AssetHandle parent, AssetHandle subassetHandle);
+
         void UpdateHotReloading();
 
         void CollectGarbage();

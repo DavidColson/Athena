@@ -5,6 +5,7 @@
 #include "Core/Log.h"
 #include "Text.h"
 #include "Shader.h"
+#include "Model.h"
 #include "Core/FileSystem.h"
 
 #include <EASTL/map.h>
@@ -171,9 +172,13 @@ namespace An
         {
             asset.m_pAssetData = new Text();
         }
-        if (fileType == ".fs" || fileType == ".vs")
+        else if (fileType == ".fs" || fileType == ".vs")
         {
             asset.m_pAssetData = new Shader();
+        }
+        else if (fileType == ".gltf")
+        {
+            asset.m_pAssetData = new Model();
         }
         else
         {
@@ -267,15 +272,17 @@ namespace An
         if (asset.m_state == AssetMetaData::Unloaded)
             return;
 
-        // Don't actually free subassets, let their parents be freed instead
-        if (asset.IsSubasset()) 
-            return;
-
         // Free subassets
         for (AssetHandle subAssetHandle : asset.m_subassets)
         {
             FreeAsset(subAssetHandle);
+            assets[subAssetHandle.id].m_state = AssetMetaData::Unloaded;
         }
+        asset.m_subassets.clear();
+
+        // Don't actually free subassets, let their parents be freed instead
+        if (asset.IsSubasset()) 
+            return;
 
         delete asset.m_pAssetData;
         asset.m_state = AssetMetaData::Unloaded;
@@ -286,6 +293,18 @@ namespace An
     bool AssetDB::IsSubasset(AssetHandle handle)
     {
         return assets[handle.id].IsSubasset();
+    }
+    
+    // ****************************************************
+
+    void AssetDB::RegisterSubasset(Asset* pAsset, AssetHandle parent, AssetHandle subassetHandle)
+    {
+        AssetMetaData& parentAsset = assets[parent.id];
+        parentAsset.m_subassets.push_back(subassetHandle);
+
+        AssetMetaData& subAsset = assets[subassetHandle.id];
+        subAsset.m_pAssetData = pAsset;
+        subAsset.m_state = AssetMetaData::Loaded;
     }
 
     // ****************************************************

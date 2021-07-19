@@ -49,10 +49,10 @@ namespace An
         eastl::vector<uint16_t> m_indices{ nullptr };
 
         TopologyType m_topologyType{TopologyType::TriangleList};
-        bgfx::VertexBufferHandle m_vertexBuffer;
-        bgfx::VertexBufferHandle m_normalsBuffer;
-        bgfx::VertexBufferHandle m_colorBuffer;
-        bgfx::IndexBufferHandle m_indexBuffer;
+        bgfx::VertexBufferHandle m_vertexBuffer{ BGFX_INVALID_HANDLE };
+        bgfx::VertexBufferHandle m_normalsBuffer{ BGFX_INVALID_HANDLE };
+        bgfx::VertexBufferHandle m_colorBuffer{ BGFX_INVALID_HANDLE };
+        bgfx::IndexBufferHandle m_indexBuffer{ BGFX_INVALID_HANDLE };
 
         AABBf m_localBounds;
 

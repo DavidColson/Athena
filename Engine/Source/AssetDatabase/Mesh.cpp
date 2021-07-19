@@ -8,6 +8,8 @@ namespace An
     bgfx::VertexLayout Primitive::s_normLayout;
     bgfx::VertexLayout Primitive::s_colLayout;
 
+	// ***********************************************************************
+
     void Mesh::Load(Path path, AssetHandle handleForThis)
     {
         // Doesn't actually load anything from disk since this would be a subasset of a model
@@ -16,6 +18,8 @@ namespace An
         CreateBuffers();
     }
 
+	// ***********************************************************************
+
     void Mesh::CreateBuffers()
     {
         for(Primitive& prim : m_primitives)
@@ -23,6 +27,8 @@ namespace An
             prim.CreateBuffers();
         }
     }
+
+	// ***********************************************************************
 
     Primitive::Primitive(const Primitive& copy)
     {
@@ -35,6 +41,8 @@ namespace An
 
         CreateBuffers();
     }
+
+	// ***********************************************************************
 
     Primitive::Primitive(Primitive&& copy)
     {
@@ -56,6 +64,8 @@ namespace An
         copy.m_indexBuffer = BGFX_INVALID_HANDLE;
     }
 
+	// ***********************************************************************
+
     Primitive& Primitive::operator=(const Primitive& copy)
     {
         bgfx::destroy(m_vertexBuffer);
@@ -73,6 +83,8 @@ namespace An
         
         return *this;
     }
+
+	// ***********************************************************************
 
     Primitive& Primitive::operator=(Primitive&& copy)
     {
@@ -97,12 +109,18 @@ namespace An
         return *this;
     }
 
+	// ***********************************************************************
+
     void Primitive::Destroy()
     {
-        if (bgfx::isValid(m_vertexBuffer)) bgfx::destroy(m_vertexBuffer);
-        if (bgfx::isValid(m_normalsBuffer)) bgfx::destroy(m_normalsBuffer);
-        if (bgfx::isValid(m_colorBuffer)) bgfx::destroy(m_colorBuffer);
-        if (bgfx::isValid(m_indexBuffer)) bgfx::destroy(m_indexBuffer);
+        if (bgfx::isValid(m_vertexBuffer)) 
+            bgfx::destroy(m_vertexBuffer);
+        if (bgfx::isValid(m_normalsBuffer)) 
+            bgfx::destroy(m_normalsBuffer);
+        if (bgfx::isValid(m_colorBuffer)) 
+            bgfx::destroy(m_colorBuffer);
+        if (bgfx::isValid(m_indexBuffer)) 
+            bgfx::destroy(m_indexBuffer);
 
         m_vertexBuffer = BGFX_INVALID_HANDLE;
         m_normalsBuffer = BGFX_INVALID_HANDLE;
@@ -110,10 +128,14 @@ namespace An
         m_indexBuffer = BGFX_INVALID_HANDLE;
     }
 
+	// ***********************************************************************
+
     Primitive::~Primitive()
     {
         Destroy();
     }
+
+	// ***********************************************************************
 
     void Primitive::InitPrimitiveLayouts()
     {
@@ -132,6 +154,8 @@ namespace An
 			.add(bgfx::Attrib::Normal, 3, bgfx::AttribType::Float)
 			.end();
     }
+
+	// ***********************************************************************
 
     void Primitive::RecalcLocalBounds()
     {
@@ -163,6 +187,8 @@ namespace An
         }
     }
 
+	// ***********************************************************************
+
     void Primitive::CreateBuffers()
     {
         if (!m_vertices.empty()) 
@@ -190,6 +216,8 @@ namespace An
         }
     }
 
+	// ***********************************************************************
+
     Primitive Primitive::NewPlainTriangle()
     {
         Primitive prim;
@@ -210,6 +238,8 @@ namespace An
         prim.CreateBuffers();
         return prim;
     }
+
+	// ***********************************************************************
 
     Primitive Primitive::NewPlainQuad()
     {
@@ -233,6 +263,8 @@ namespace An
         prim.CreateBuffers();
         return prim;
     }
+
+	// ***********************************************************************
 
     Primitive Primitive::NewCube()
     {
