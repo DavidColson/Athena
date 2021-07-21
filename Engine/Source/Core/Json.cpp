@@ -31,17 +31,17 @@ namespace An
 
 	struct Token
 	{
-		Token(TokenType type, int _line, int _column, int _index)
-		: m_type(type), m_line(_line), m_column(_column), m_index(_index) {}
+		Token(TokenType type, int _line, int _column)
+		: m_type(type), m_line(_line), m_column(_column) {}
 
-		Token(TokenType type, int _line, int _column, int _index, eastl::string _stringOrIdentifier)
-		: m_type(type), m_line(_line), m_column(_column), m_index(_index), m_stringOrIdentifier(_stringOrIdentifier) {}
+		Token(TokenType type, int _line, int _column, eastl::string _stringOrIdentifier)
+		: m_type(type), m_line(_line), m_column(_column), m_stringOrIdentifier(_stringOrIdentifier) {}
 
-		Token(TokenType type, int _line, int _column, int _index, double _number)
-		: m_type(type), m_line(_line), m_column(_column), m_index(_index), m_number(_number) {}
+		Token(TokenType type, int _line, int _column, double _number)
+		: m_type(type), m_line(_line), m_column(_column), m_number(_number) {}
 
-		Token(TokenType type, int _line, int _column, int _index, bool _boolean)
-		: m_type(type), m_line(_line), m_column(_column), m_index(_index), m_boolean(_boolean) {}
+		Token(TokenType type, int _line, int _column, bool _boolean)
+		: m_type(type), m_line(_line), m_column(_column), m_boolean(_boolean) {}
 
 		TokenType m_type;
 		eastl::string m_stringOrIdentifier;
@@ -50,16 +50,23 @@ namespace An
 
 		int m_line;
 		int m_column;
-		int m_index;
 	};
 
 	// ***********************************************************************
 
 	eastl::string ParseString(Scan::ScanningState& scan, char bound)
 	{	
-		int start = scan.current;
-		eastl::string result;
-		while (Scan::Peek(scan) != bound && !Scan::IsAtEnd(scan))
+		char* start = scan.current;
+		char* pos = start;
+		while (*pos != bound && !Scan::IsAtEnd(scan))
+		{
+			pos++;
+		}
+		size_t count = pos - start;
+		char* outputString = new char[count * 2]; // to allow for escape chars 
+		pos = outputString;
+
+		for (size_t i = 0; i < count; i++)
 		{
 			char c = Advance(scan);
 			
@@ -83,16 +90,16 @@ namespace An
 				switch (next)
 				{
 				// Convert basic escape sequences to their actual characters
-				case '\'': result += '\''; break;
-				case '"': result += '"'; break;
-				case '\\':result += '\\'; break;
-				case 'b': result += '\b'; break;
-				case 'f': result += '\f'; break;
-				case 'n': result += '\n'; break;
-				case 'r': result += '\r'; break;
-				case 't': result += '\t'; break;
-				case 'v': result += '\v'; break;
-				case '0':result += '\0'; break;
+				case '\'': *pos++ = '\''; break;
+				case '"': *pos++ = '"'; break;
+				case '\\':*pos++ = '\\'; break;
+				case 'b': *pos++ = '\b'; break;
+				case 'f': *pos++ = '\f'; break;
+				case 'n': *pos++ = '\n'; break;
+				case 'r': *pos++ = '\r'; break;
+				case 't': *pos++ = '\t'; break;
+				case 'v': *pos++ = '\v'; break;
+				case '0': *pos++ = '\0'; break;
 
 				// Unicode stuff, not doing this for now
 				case 'u':
@@ -106,14 +113,17 @@ namespace An
 						Scan::Advance(scan);
 					break;
 				default:
-					result += next; // all other escaped characters are kept as is, without the '\' that preceeded it
+					*pos++ =  next; // all other escaped characters are kept as is, without the '\' that preceeded it
 				}
 			}
 			else
-				result += c;
+				*pos++ = c;
 		}
 		Scan::Advance(scan);
-		return result;
+
+		eastl::string result(outputString, pos);
+        delete outputString;
+        return result;
 	}
 
 	// ***********************************************************************
@@ -121,7 +131,7 @@ namespace An
 	double ParseNumber(Scan::ScanningState& scan)
 	{	
 		scan.current -= 1; // Go back to get the first digit or symbol
-		int start = scan.current;
+		char* start = scan.current;
 
 		// Hex number
 		if (Scan::Peek(scan) == '0' && (Scan::PeekNext(scan) == 'x' || Scan::PeekNext(scan) == 'X'))
@@ -151,7 +161,7 @@ namespace An
 
 		// TODO: error report. This returns 0.0 if no conversion possible. We can look at the literal string and see
 		// If it's 0.0, ".0", "0." or 0. if not there's been an error in the parsing. I know this is cheeky. I don't care.
-		return strtod(scan.file.substr(start, (scan.current - start)).c_str(), nullptr);
+		return strtod(start, &scan.current);
 	}
 
 	// ***********************************************************************
@@ -159,8 +169,9 @@ namespace An
 	eastl::vector<Token> TokenizeJson(eastl::string jsonText)
 	{
 		Scan::ScanningState scan;
-		scan.file = jsonText;
-		scan.current = 0;
+		scan.textStart = jsonText.data();
+		scan.textEnd = jsonText.data() + jsonText.size();
+		scan.current = (char*)scan.textStart;
 		scan.line = 1;
 
 		eastl::vector<Token> tokens;
@@ -168,23 +179,23 @@ namespace An
 		while (!Scan::IsAtEnd(scan))
 		{
 			char c = Scan::Advance(scan);
-			int column = scan.current - scan.currentLineStart;
-			int loc = scan.current - 1;
+			int column = int(scan.current - scan.currentLineStart);
+			char* loc = scan.current - 1;
 			switch (c)
 			{
 			// Single character tokens
 			case '[': 
-				tokens.push_back(Token{LeftBracket, scan.line, column, loc}); break;
+				tokens.push_back(Token{LeftBracket, scan.line, column}); break;
 			case ']': 
-				tokens.push_back(Token{RightBracket, scan.line, column, loc}); break;
+				tokens.push_back(Token{RightBracket, scan.line, column}); break;
 			case '{': 
-				tokens.push_back(Token{LeftBrace, scan.line, column,loc}); break;
+				tokens.push_back(Token{LeftBrace, scan.line, column}); break;
 			case '}': 
-				tokens.push_back(Token{RightBrace, scan.line, column, loc}); break;
+				tokens.push_back(Token{RightBrace, scan.line, column}); break;
 			case ':': 
-				tokens.push_back(Token{Colon, scan.line, column, loc}); break;
+				tokens.push_back(Token{Colon, scan.line, column}); break;
 			case ',': 
-				tokens.push_back(Token{Comma, scan.line, column, loc}); break;
+				tokens.push_back(Token{Comma, scan.line, column}); break;
 
 			// Comments!
 			case '/':
@@ -214,13 +225,13 @@ namespace An
 			case '\'':
 			{
 				eastl::string string = ParseString(scan, '\'');
-				tokens.push_back(Token{String, scan.line, column, loc, string}); break;
+				tokens.push_back(Token{String, scan.line, column, string}); break;
 				break;
 			}
 			case '"':
 			{
 				eastl::string string = ParseString(scan, '"');
-				tokens.push_back(Token{String, scan.line, column, loc, string}); break;
+				tokens.push_back(Token{String, scan.line, column, string}); break;
 				break;		
 			}
 
@@ -229,7 +240,7 @@ namespace An
 				if (Scan::IsDigit(c) || c == '+' || c == '-' || c == '.')
 				{
 					double num = ParseNumber(scan);
-					tokens.push_back(Token{Number, scan.line, column, loc, num});
+					tokens.push_back(Token{Number, scan.line, column, num});
 					break;
 				}
 				
@@ -239,17 +250,17 @@ namespace An
 					while (Scan::IsAlphaNumeric(Scan::Peek(scan)))
 						Scan::Advance(scan);
 					
-					eastl::string identifier = scan.file.substr(loc, scan.current - loc);
+					eastl::string identifier = eastl::string(loc, scan.current);
 
 					// Check for keywords
 					if (identifier == "true")
-						tokens.push_back(Token{Boolean, scan.line, column, loc, true});
+						tokens.push_back(Token{Boolean, scan.line, column, true});
 					else if (identifier == "false")
-						tokens.push_back(Token{Boolean, scan.line, column, loc, false});
+						tokens.push_back(Token{Boolean, scan.line, column, false});
 					else if (identifier == "null")
-						tokens.push_back(Token{Null, scan.line, column, loc});
+						tokens.push_back(Token{Null, scan.line, column});
 					else
-						tokens.push_back(Token{Identifier, scan.line, column, loc, identifier});
+						tokens.push_back(Token{Identifier, scan.line, column, identifier});
 				}
 				break;
 			}

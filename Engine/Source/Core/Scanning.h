@@ -9,9 +9,10 @@ namespace An::Scan
 
     struct ScanningState
     {
-        eastl::string file;
-        int current{ 0 };
-        int currentLineStart{ 0 };
+        const char* textStart;
+        const char* textEnd;
+        char* current{ nullptr };
+        char* currentLineStart{ nullptr };
         int line{ 1 };
         bool encounteredError{ false };
     };
@@ -47,7 +48,7 @@ namespace An::Scan
     // Error reporting
     //////////////////
 
-    eastl::string ExtractLineWithError(ScanningState& scan, int errorAt);
+    eastl::string ExtractLineWithError(ScanningState& scan, char* errorAt);
 
-    void HandleError(ScanningState& scan, const char* message, int location);
+    void HandleError(ScanningState& scan, const char* message, char* location);
 }

@@ -15,8 +15,8 @@ namespace An
 
 	char Scan::Advance(ScanningState& scan)
 	{
+		char c = *(scan.current);
 		scan.current++;
-		char c = scan.file[scan.current - 1];
 		if (c == '\n')
 		{
 			scan.line++;
@@ -29,7 +29,7 @@ namespace An
 
 	bool Scan::Match(ScanningState& scan, char expected)
 	{
-		if (scan.file[scan.current] == expected)
+		if (*(scan.current) == expected)
 		{
 			Advance(scan);
 			return true;
@@ -41,14 +41,14 @@ namespace An
 
 	char Scan::Peek(ScanningState& scan)
 	{
-		return scan.file[scan.current];
+		return *(scan.current);
 	}
 
 	// ***********************************************************************
 
 	char Scan::PeekNext(ScanningState& scan)
 	{
-		return scan.file[scan.current + 1];
+		return *(scan.current++);
 	}
 
 	// ***********************************************************************
@@ -64,7 +64,7 @@ namespace An
 
 	void Scan::AdvanceOverWhitespace(ScanningState& scan)
 	{
-		char c = scan.file[scan.current];
+		char c = *(scan.current);
 		while (IsWhitespace(c))
 		{
 			Advance(scan);
@@ -81,7 +81,7 @@ namespace An
 
 	void Scan::AdvanceOverWhitespaceNoNewline(ScanningState& scan)
 	{
-		char c = scan.file[scan.current];
+		char c = *(scan.current);
 		while (IsWhitespace(c))
 		{
 			if (c == '\n')
@@ -95,7 +95,7 @@ namespace An
 
 	bool Scan::IsAtEnd(ScanningState& scan)
 	{
-		return scan.current >= scan.file.size();
+		return scan.current >= scan.textEnd;
 	}
 
 	// ***********************************************************************
@@ -138,7 +138,6 @@ namespace An
 	// TODO: Move into Json tokenizer, and specialize into json strings
 	eastl::string Scan::ParseToString(ScanningState& scan, char bound)
 	{	
-		int start = scan.current;
 		Scan::Advance(scan); // advance over initial bound character
 		eastl::string result;
 		while (Scan::Peek(scan) != bound && !Scan::IsAtEnd(scan))
@@ -190,16 +189,16 @@ namespace An
 
 	// ***********************************************************************
 
-	eastl::string Scan::ExtractLineWithError(ScanningState& scan, int errorAt)
+	eastl::string Scan::ExtractLineWithError(ScanningState& scan, char* errorAt)
 	{
 		// We give back the last two lines before the error, in case of cascading errors
 		eastl::vector<eastl::string> lines;
 
 		// Find the end of the line in which the error occured
-		int lineEnd = errorAt;
-		while (lineEnd < scan.file.size())
+		char* lineEnd = errorAt;
+		while (errorAt < scan.textEnd)
 		{
-			if (scan.file[lineEnd] == '\n')
+			if (*(lineEnd) == '\n')
 			{
 				break;
 			}
@@ -207,17 +206,17 @@ namespace An
 		}
 
 		// Count backward finding the last 2 lines
-		int lineStart = errorAt;
-		if (scan.file[lineStart] == '\n')
+		char* lineStart = errorAt;
+		if (*(lineStart) == '\n')
 			lineStart--;
 
 		while (lineStart >= 0 && lines.size() < 2)
 		{
-			if (lineStart == 0 || scan.file[lineStart] == '\n')
+			if (lineStart == 0 || *(lineStart) == '\n')
 			{
 				// We use +1 and -1 to trim the newline characters, unless it's the start of the file
 				if (lineStart == 0) lineStart -= 1;
-				lines.push_back(scan.file.substr(lineStart + 1, (lineEnd - lineStart)-1));
+				lines.push_back(eastl::string(lineStart+1, lineEnd-1));
 				lineEnd = lineStart + 1;
 			}
 			lineStart--;
@@ -234,7 +233,7 @@ namespace An
 
 	// ***********************************************************************
 
-	void Scan::HandleError(ScanningState& scan, const char* message, int location)
+	void Scan::HandleError(ScanningState& scan, const char* message, char* location)
 	{
 		if (!scan.encounteredError)
 		{
