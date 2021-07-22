@@ -78,30 +78,33 @@ namespace An
         }
 
         eastl::vector<Buffer> rawDataBuffers;
-        for (int i = 0; i < parsed["buffers"].Count(); i++)
+        JsonValue& jsonBuffers = parsed["buffers"];
+        for (int i = 0; i < jsonBuffers.Count(); i++)
         {
             Buffer buf;
-            buf.byteLength = parsed["buffers"][i]["byteLength"].ToInt();
+            buf.byteLength = jsonBuffers[i]["byteLength"].ToInt();
             buf.pBytes = new char[buf.byteLength];
             
-            eastl::string encodedBuffer = parsed["buffers"][i]["uri"].ToString().substr(37);
+            eastl::string encodedBuffer = jsonBuffers[i]["uri"].ToString().substr(37);
             memcpy(buf.pBytes, DecodeBase64(encodedBuffer).data(), buf.byteLength);
 
             rawDataBuffers.push_back(buf);
         }
 
         eastl::vector<BufferView> bufferViews;
-        for (int i = 0; i < parsed["bufferViews"].Count(); i++)
+        JsonValue& jsonBufferViews = parsed["bufferViews"];
+
+        for (int i = 0; i < jsonBufferViews.Count(); i++)
         {
             BufferView view;
 
-            int bufIndex = parsed["bufferViews"][i]["buffer"].ToInt();
-            view.pBuffer = rawDataBuffers[bufIndex].pBytes + parsed["bufferViews"][i]["byteOffset"].ToInt(); //@Incomplete, byte offset could not be provided, in which case we assume 0
+            int bufIndex = jsonBufferViews[i]["buffer"].ToInt();
+            view.pBuffer = rawDataBuffers[bufIndex].pBytes + jsonBufferViews[i]["byteOffset"].ToInt(); //@Incomplete, byte offset could not be provided, in which case we assume 0
 
-            view.length = parsed["bufferViews"][i]["byteLength"].ToInt();
+            view.length = jsonBufferViews[i]["byteLength"].ToInt();
 
             // @Incomplete, target may not be provided
-            int target = parsed["bufferViews"][i]["target"].ToInt();
+            int target = jsonBufferViews[i]["target"].ToInt();
             if (target == 34963)
                 view.target = BufferView::ElementArray;
             else if (target = 34962)
@@ -110,16 +113,20 @@ namespace An
         }
 
         eastl::vector<Accessor> accessors;
-        for (int i = 0; i < parsed["accessors"].Count(); i++)
+        JsonValue& jsonAccessors = parsed["accessors"];
+        accessors.reserve(jsonAccessors.Count());
+
+        for (int i = 0; i < jsonAccessors.Count(); i++)
         {
             Accessor acc;
+            JsonValue& jsonAcc = jsonAccessors[i];
 
-            int idx = parsed["accessors"][i]["bufferView"].ToInt();
-            acc.pBuffer = bufferViews[idx].pBuffer + parsed["accessors"][i]["byteOffset"].ToInt();
+            int idx = jsonAcc["bufferView"].ToInt();
+            acc.pBuffer = bufferViews[idx].pBuffer + jsonAcc["byteOffset"].ToInt();
             
-            acc.count = parsed["accessors"][i]["count"].ToInt();
+            acc.count = jsonAcc["count"].ToInt();
 
-            int compType = parsed["accessors"][i]["componentType"].ToInt();
+            int compType = jsonAcc["componentType"].ToInt();
             switch (compType)
             {
             case 5120: acc.componentType = Accessor::Byte; break;
@@ -131,7 +138,7 @@ namespace An
             default: break;
             }
 
-            eastl::string type = parsed["accessors"][i]["type"].ToString();
+            eastl::string type = jsonAcc["type"].ToString();
             if (type == "SCALAR") acc.type = Accessor::Scalar;
             else if (type == "VEC2") acc.type = Accessor::Vec2;
             else if (type == "VEC3") acc.type = Accessor::Vec3;

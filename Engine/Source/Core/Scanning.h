@@ -17,11 +17,22 @@ namespace An::Scan
         bool encounteredError{ false };
     };
 
-    char Advance(ScanningState& scan);
+    inline char Advance(ScanningState& scan)
+    {
+		return *(scan.current++);
+	}
+
+    inline char Peek(ScanningState& scan)
+    {
+		return *(scan.current);
+	}
+
+    inline bool IsAtEnd(ScanningState& scan)
+    {
+		return scan.current >= scan.textEnd;
+	}
 
     bool Match(ScanningState& scan, char expected);
-
-    char Peek(ScanningState& scan);
 
     char PeekNext(ScanningState& scan);
 
@@ -30,8 +41,6 @@ namespace An::Scan
     void AdvanceOverWhitespace(ScanningState& scan);
 
     void AdvanceOverWhitespaceNoNewline(ScanningState& scan);
-
-    bool IsAtEnd(ScanningState& scan);
 
     bool IsPartOfNumber(char c);
 
@@ -44,11 +53,4 @@ namespace An::Scan
     bool IsAlphaNumeric(char c);
 
     eastl::string ParseToString(ScanningState& scan, char bound);
-
-    // Error reporting
-    //////////////////
-
-    eastl::string ExtractLineWithError(ScanningState& scan, char* errorAt);
-
-    void HandleError(ScanningState& scan, const char* message, char* location);
 }

@@ -13,20 +13,6 @@ namespace An
 {
 	// ***********************************************************************
 
-	char Scan::Advance(ScanningState& scan)
-	{
-		char c = *(scan.current);
-		scan.current++;
-		if (c == '\n')
-		{
-			scan.line++;
-			scan.currentLineStart = scan.current;
-		}
-		return c;
-	}
-
-	// ***********************************************************************
-
 	bool Scan::Match(ScanningState& scan, char expected)
 	{
 		if (*(scan.current) == expected)
@@ -35,13 +21,6 @@ namespace An
 			return true;
 		}
 		return false;
-	}
-
-	// ***********************************************************************
-
-	char Scan::Peek(ScanningState& scan)
-	{
-		return *(scan.current);
 	}
 
 	// ***********************************************************************
@@ -93,13 +72,6 @@ namespace An
 
 	// ***********************************************************************
 
-	bool Scan::IsAtEnd(ScanningState& scan)
-	{
-		return scan.current >= scan.textEnd;
-	}
-
-	// ***********************************************************************
-
 	bool Scan::IsPartOfNumber(char c)
 	{
 		return (c >= '0' && c <= '9') || c == '-' || c == '+' || c == '.';
@@ -131,124 +103,5 @@ namespace An
 	bool Scan::IsAlphaNumeric(char c)
 	{
 		return IsAlpha(c) || IsDigit(c);
-	}
-
-	// ***********************************************************************
-
-	// TODO: Move into Json tokenizer, and specialize into json strings
-	eastl::string Scan::ParseToString(ScanningState& scan, char bound)
-	{	
-		Scan::Advance(scan); // advance over initial bound character
-		eastl::string result;
-		while (Scan::Peek(scan) != bound && !Scan::IsAtEnd(scan))
-		{
-			char c = Advance(scan);
-			
-			switch (c)
-			{
-			case '\0':
-			case '\t':
-			case '\b':
-			case '\\':
-				Scan::HandleError(scan, "Invalid character in string", scan.current-1); break;
-			case '\r':
-			case '\n':
-				Scan::HandleError(scan, "Unexpected end of line, please keep whole strings on one line", scan.current-1); break;
-			default:
-				break;
-			}
-
-			if (c == '\\')
-			{
-				char next = Advance(scan);
-				switch (next)
-				{
-				case '"': result += '"'; break;
-				case '\\':result += '\\'; break;
-				case '/': result += '/'; break;
-				case 'b': result += '\b'; break;
-				case 'f': result += '\f'; break;
-				case 'n': result += '\n'; break;
-				case 'r': result += '\r'; break;
-				case 't': result += '\t'; break;
-				case 'u':
-					Scan::HandleError(scan, "This parser does not yet support unicode escape codes", scan.current - 1); break;
-				default:
-					Scan::HandleError(scan, "Disallowed escape character or none provided", scan.current - 1); break;
-				}
-			}
-			else
-				result += c;
-		}
-		Scan::Advance(scan);
-		return result;
-	}
-
-	// Error reporting
-	//////////////////
-
-	// ***********************************************************************
-
-	eastl::string Scan::ExtractLineWithError(ScanningState& scan, char* errorAt)
-	{
-		// We give back the last two lines before the error, in case of cascading errors
-		eastl::vector<eastl::string> lines;
-
-		// Find the end of the line in which the error occured
-		char* lineEnd = errorAt;
-		while (errorAt < scan.textEnd)
-		{
-			if (*(lineEnd) == '\n')
-			{
-				break;
-			}
-			lineEnd++;
-		}
-
-		// Count backward finding the last 2 lines
-		char* lineStart = errorAt;
-		if (*(lineStart) == '\n')
-			lineStart--;
-
-		while (lineStart >= 0 && lines.size() < 2)
-		{
-			if (lineStart == 0 || *(lineStart) == '\n')
-			{
-				// We use +1 and -1 to trim the newline characters, unless it's the start of the file
-				if (lineStart == 0) lineStart -= 1;
-				lines.push_back(eastl::string(lineStart+1, lineEnd-1));
-				lineEnd = lineStart + 1;
-			}
-			lineStart--;
-		}
-		
-		eastl::string error;
-		for (int i = (int)lines.size() - 1; i >= 0; i--)
-		{
-			error.append_sprintf("%5i|%s", scan.line - i, lines[i].c_str());
-		}
-		error += "\n";
-		return error;
-	}
-
-	// ***********************************************************************
-
-	void Scan::HandleError(ScanningState& scan, const char* message, char* location)
-	{
-		if (!scan.encounteredError)
-		{
-			eastl::string errorDiagram = ExtractLineWithError(scan, location);
-
-			int columnToPointTo = (location - scan.currentLineStart) + 6; // 6 to account for the padded line number text
-			for(int i = 0; i < columnToPointTo; i++)
-				errorDiagram += ' ';
-			errorDiagram.append_sprintf("^----- %s", message);
-
-			Log::Crit("Encountered Parsing Error on line %i: \n%s\n", 
-				scan.line, 
-				errorDiagram.c_str()
-				);
-			scan.encounteredError = true;
-		}
 	}
 }

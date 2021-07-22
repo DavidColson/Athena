@@ -31,30 +31,27 @@ namespace An
 
 	struct Token
 	{
-		Token(TokenType type, int _line, int _column)
-		: m_type(type), m_line(_line), m_column(_column) {}
+		Token(TokenType type)
+		: m_type(type) {}
 
-		Token(TokenType type, int _line, int _column, eastl::string _stringOrIdentifier)
-		: m_type(type), m_line(_line), m_column(_column), m_stringOrIdentifier(_stringOrIdentifier) {}
+		Token(TokenType type, eastl::string _stringOrIdentifier)
+		: m_type(type), m_stringOrIdentifier(_stringOrIdentifier) {}
 
-		Token(TokenType type, int _line, int _column, double _number)
-		: m_type(type), m_line(_line), m_column(_column), m_number(_number) {}
+		Token(TokenType type, double _number)
+		: m_type(type), m_number(_number) {}
 
-		Token(TokenType type, int _line, int _column, bool _boolean)
-		: m_type(type), m_line(_line), m_column(_column), m_boolean(_boolean) {}
+		Token(TokenType type, bool _boolean)
+		: m_type(type), m_boolean(_boolean) {}
 
 		TokenType m_type;
 		eastl::string m_stringOrIdentifier;
 		double m_number;
 		bool m_boolean;
-
-		int m_line;
-		int m_column;
 	};
 
 	// ***********************************************************************
 
-	eastl::string ParseString(Scan::ScanningState& scan, char bound)
+	eastl::string ParseStringSlow(Scan::ScanningState& scan, char bound)
 	{	
 		char* start = scan.current;
 		char* pos = start;
@@ -66,9 +63,11 @@ namespace An
 		char* outputString = new char[count * 2]; // to allow for escape chars 
 		pos = outputString;
 
+		char* cursor = scan.current;
+
 		for (size_t i = 0; i < count; i++)
 		{
-			char c = Advance(scan);
+			char c = *(cursor++);
 			
 			// Disallowed characters
 			switch (c)
@@ -77,16 +76,16 @@ namespace An
 				break;
 			case '\r':
 				if (Scan::Peek(scan) == '\n') // CRLF line endings
-					Scan::Advance(scan);
+					cursor++;
 				break;
-				Scan::HandleError(scan, "Unexpected end of line", scan.current-1); break;
+				Log::Crit("Unexpected end of line"); break;
 			default:
 				break;
 			}
 
 			if (c == '\\')
 			{
-				char next = Advance(scan);
+				char next = *(cursor++);
 				switch (next)
 				{
 				// Convert basic escape sequences to their actual characters
@@ -103,14 +102,14 @@ namespace An
 
 				// Unicode stuff, not doing this for now
 				case 'u':
-					Scan::HandleError(scan, "This parser does not yet support unicode escape codes", scan.current - 1); break;
+					Log::Crit("This parser does not yet support unicode escape codes"); break;
 				
 				// Line terminators, allowed but we do not include them in the final string
 				case '\n':
 					break;
 				case '\r':
 					if (Scan::Peek(scan) == '\n') // CRLF line endings
-						Scan::Advance(scan);
+						cursor++;
 					break;
 				default:
 					*pos++ =  next; // all other escaped characters are kept as is, without the '\' that preceeded it
@@ -119,10 +118,30 @@ namespace An
 			else
 				*pos++ = c;
 		}
-		Scan::Advance(scan);
+		cursor++;
+
+		scan.current = cursor;
 
 		eastl::string result(outputString, pos);
         delete outputString;
+        return result;
+	}
+
+	// ***********************************************************************
+
+	eastl::string ParseString(Scan::ScanningState& scan, char bound)
+	{	
+		char* start = scan.current;
+		while (*(scan.current) != bound && !Scan::IsAtEnd(scan))
+		{
+			if (*(scan.current++) == '\\')
+			{
+				scan.current = start;
+				return ParseStringSlow(scan, bound);
+			}
+		}
+		eastl::string result(start, scan.current);
+		scan.current++;
         return result;
 	}
 
@@ -185,17 +204,17 @@ namespace An
 			{
 			// Single character tokens
 			case '[': 
-				tokens.push_back(Token{LeftBracket, scan.line, column}); break;
+				tokens.push_back(Token{LeftBracket}); break;
 			case ']': 
-				tokens.push_back(Token{RightBracket, scan.line, column}); break;
+				tokens.push_back(Token{RightBracket}); break;
 			case '{': 
-				tokens.push_back(Token{LeftBrace, scan.line, column}); break;
+				tokens.push_back(Token{LeftBrace}); break;
 			case '}': 
-				tokens.push_back(Token{RightBrace, scan.line, column}); break;
+				tokens.push_back(Token{RightBrace}); break;
 			case ':': 
-				tokens.push_back(Token{Colon, scan.line, column}); break;
+				tokens.push_back(Token{Colon}); break;
 			case ',': 
-				tokens.push_back(Token{Comma, scan.line, column}); break;
+				tokens.push_back(Token{Comma}); break;
 
 			// Comments!
 			case '/':
@@ -225,13 +244,13 @@ namespace An
 			case '\'':
 			{
 				eastl::string string = ParseString(scan, '\'');
-				tokens.push_back(Token{String, scan.line, column, string}); break;
+				tokens.push_back(Token{String, string}); break;
 				break;
 			}
 			case '"':
 			{
 				eastl::string string = ParseString(scan, '"');
-				tokens.push_back(Token{String, scan.line, column, string}); break;
+				tokens.push_back(Token{String, string}); break;
 				break;		
 			}
 
@@ -240,7 +259,7 @@ namespace An
 				if (Scan::IsDigit(c) || c == '+' || c == '-' || c == '.')
 				{
 					double num = ParseNumber(scan);
-					tokens.push_back(Token{Number, scan.line, column, num});
+					tokens.push_back(Token{Number, num});
 					break;
 				}
 				
@@ -254,13 +273,13 @@ namespace An
 
 					// Check for keywords
 					if (identifier == "true")
-						tokens.push_back(Token{Boolean, scan.line, column, true});
+						tokens.push_back(Token{Boolean, true});
 					else if (identifier == "false")
-						tokens.push_back(Token{Boolean, scan.line, column, false});
+						tokens.push_back(Token{Boolean, false});
 					else if (identifier == "null")
-						tokens.push_back(Token{Null, scan.line, column});
+						tokens.push_back(Token{Null});
 					else
-						tokens.push_back(Token{Identifier, scan.line, column, identifier});
+						tokens.push_back(Token{Identifier, identifier});
 				}
 				break;
 			}
@@ -346,7 +365,7 @@ namespace An
 			currentToken += 1;
 		}
 		currentToken++; // Advance over closing brace
-		return map;
+		return eastl::move(map);
 	}
 
 	// ***********************************************************************
@@ -370,7 +389,7 @@ namespace An
 			currentToken += 1;
 		}
 		currentToken++; // Advance over closing bracket
-		return array;
+		return eastl::move(array);
 	}
 
 
