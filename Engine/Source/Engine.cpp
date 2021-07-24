@@ -9,6 +9,7 @@
 #include "AssetDatabase/Shader.h"
 #include "AssetDatabase/Mesh.h"
 #include "AssetDatabase/Model.h"
+#include "AssetDatabase/Image.h"
 #include "Core/Vec3.h"
 #include "Core/Matrix.h"
 #include "Input.h"
@@ -87,6 +88,10 @@ void MakeWindow()
 		const bgfx::ViewId kClearView = 0;
 		bgfx::setViewClear(kClearView, BGFX_CLEAR_COLOR | BGFX_CLEAR_DEPTH, 0x404040ff, 1.0f, 0);
 
+
+
+
+
 		An::AssetHandle cubesVertShader = An::AssetHandle("Engine/Shaders/cubes.vs");
 		An::AssetHandle cubesFragShader = An::AssetHandle("Engine/Shaders/cubes.fs");
 		
@@ -95,8 +100,16 @@ void MakeWindow()
 		An::Primitive cube = An::Primitive::NewCube();
 
 		An::AssetHandle plane("Game/Assets/Spitfire.gltf:mesh_13");
+		An::AssetHandle planeColour("Game/Assets/BaseColor.png");
 
 		bgfx::ProgramHandle program = bgfx::createProgram(An::AssetDB::GetAsset<An::Shader>(cubesVertShader)->m_handle, An::AssetDB::GetAsset<An::Shader>(cubesFragShader)->m_handle, false);
+
+		bgfx::UniformHandle colourSamplerHandle = bgfx::createUniform("s_texColor",  bgfx::UniformType::Sampler);
+
+
+
+
+
 
 		bgfx::setViewRect(kClearView, 0, 0, winWidth, winHeight);
 		bgfx::reset(winWidth, winHeight, BGFX_RESET_VSYNC);
@@ -165,9 +178,9 @@ void MakeWindow()
 					
 				Vec3f forward = toCameraSpace.GetForwardVector().GetNormalized();
 				if (Input::GetKeyHeld(SDL_SCANCODE_W))
-					cameraPos -= forward * camSpeed * deltaTime;
-				if (Input::GetKeyHeld(SDL_SCANCODE_S))
 					cameraPos += forward * camSpeed * deltaTime;
+				if (Input::GetKeyHeld(SDL_SCANCODE_S))
+					cameraPos -= forward * camSpeed * deltaTime;
 
 				Vec3f up = toCameraSpace.GetUpVector().GetNormalized();
 				if (Input::GetKeyHeld(SDL_SCANCODE_SPACE))
@@ -177,8 +190,8 @@ void MakeWindow()
 
 				if (Input::GetMouseInRelativeMode())
 				{
-					cameraRot.y += 0.1f * deltaTime * Input::GetMouseDelta().x;
-					cameraRot.x += 0.1f * deltaTime * Input::GetMouseDelta().y;
+					cameraRot.y -= 0.1f * deltaTime * Input::GetMouseDelta().x;
+					cameraRot.x -= 0.1f * deltaTime * Input::GetMouseDelta().y;
 				}
 			}
 
@@ -198,10 +211,9 @@ void MakeWindow()
 					| BGFX_STATE_WRITE_A
 					| BGFX_STATE_WRITE_Z
 					| BGFX_STATE_DEPTH_TEST_LESS
-					| BGFX_STATE_CULL_CCW
 					| BGFX_STATE_MSAA;
 
-			Matrixf rotate = Matrixf::MakeRotation(Vec3f(-0.5f, 3.8f, 0.0f));
+			Matrixf rotate = Matrixf::MakeRotation(Vec3f(-0.5f, 0.8f, 0.0f));
 
 			// Set model matrix for rendering.
 			bgfx::setTransform(&rotate);
@@ -210,7 +222,11 @@ void MakeWindow()
 			An::Primitive* pPlaneFuze = &(pPlaneRaw->m_primitives[0]);
 
 			bgfx::setVertexBuffer(0, pPlaneFuze->m_vertexBuffer);
+			bgfx::setVertexBuffer(1, pPlaneFuze->m_uv0Buffer);
 			bgfx::setIndexBuffer(pPlaneFuze->m_indexBuffer);
+
+			An::Image* pPlaneImage = An::AssetDB::GetAsset<An::Image>(planeColour);
+			bgfx::setTexture(0, colourSamplerHandle,  pPlaneImage->m_gpuHandle);
 
 			bgfx::setState(state);
 			bgfx::submit(0, program);

@@ -44,6 +44,7 @@ namespace An
         eastl::string m_name{"Primitive"};
 
         eastl::vector<Vec3f> m_vertices;
+        eastl::vector<Vec2f> m_uv0;
         eastl::vector<Vec3f> m_normals;
         eastl::vector<Vec4f> m_colors;
         eastl::vector<uint16_t> m_indices{ nullptr };
@@ -51,6 +52,7 @@ namespace An
         TopologyType m_topologyType{TopologyType::TriangleList};
         bgfx::VertexBufferHandle m_vertexBuffer{ BGFX_INVALID_HANDLE };
         bgfx::VertexBufferHandle m_normalsBuffer{ BGFX_INVALID_HANDLE };
+        bgfx::VertexBufferHandle m_uv0Buffer{ BGFX_INVALID_HANDLE };
         bgfx::VertexBufferHandle m_colorBuffer{ BGFX_INVALID_HANDLE };
         bgfx::IndexBufferHandle m_indexBuffer{ BGFX_INVALID_HANDLE };
 
@@ -58,6 +60,7 @@ namespace An
 
         static bgfx::VertexLayout s_vertLayout;
 	    static bgfx::VertexLayout s_normLayout;
+	    static bgfx::VertexLayout s_uv0Layout;
 	    static bgfx::VertexLayout s_colLayout;
     };
 

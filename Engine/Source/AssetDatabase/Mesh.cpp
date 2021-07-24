@@ -5,6 +5,7 @@
 namespace An
 {
     bgfx::VertexLayout Primitive::s_vertLayout;
+    bgfx::VertexLayout Primitive::s_uv0Layout;
     bgfx::VertexLayout Primitive::s_normLayout;
     bgfx::VertexLayout Primitive::s_colLayout;
 
@@ -33,6 +34,7 @@ namespace An
     Primitive::Primitive(const Primitive& copy)
     {
         m_vertices = eastl::vector<Vec3f>(copy.m_vertices);
+        m_uv0 = eastl::vector<Vec2f>(copy.m_uv0);
         m_normals = eastl::vector<Vec3f>(copy.m_normals);
         m_colors = eastl::vector<Vec4f>(copy.m_colors);
         m_indices = eastl::vector<uint16_t>(copy.m_indices);
@@ -47,6 +49,7 @@ namespace An
     Primitive::Primitive(Primitive&& copy)
     {
         m_vertices = eastl::move(copy.m_vertices);
+        m_uv0 = eastl::move(copy.m_uv0);
         m_normals = eastl::move(copy.m_normals);
         m_colors = eastl::move(copy.m_colors);
         m_indices = eastl::move(copy.m_indices);
@@ -54,11 +57,13 @@ namespace An
         m_localBounds = copy.m_localBounds;
 
         m_vertexBuffer = copy.m_vertexBuffer;
+        m_uv0Buffer = copy.m_uv0Buffer;
         m_normalsBuffer = copy.m_normalsBuffer;
         m_colorBuffer = copy.m_colorBuffer;
         m_indexBuffer = copy.m_indexBuffer;
 
         copy.m_vertexBuffer = BGFX_INVALID_HANDLE;
+        copy.m_uv0Buffer = BGFX_INVALID_HANDLE;
         copy.m_normalsBuffer = BGFX_INVALID_HANDLE;
         copy.m_colorBuffer = BGFX_INVALID_HANDLE;
         copy.m_indexBuffer = BGFX_INVALID_HANDLE;
@@ -69,11 +74,13 @@ namespace An
     Primitive& Primitive::operator=(const Primitive& copy)
     {
         bgfx::destroy(m_vertexBuffer);
+        bgfx::destroy(m_uv0Buffer);
         bgfx::destroy(m_normalsBuffer);
         bgfx::destroy(m_colorBuffer);
         bgfx::destroy(m_indexBuffer);
 
         m_vertices = eastl::vector<Vec3f>(copy.m_vertices);
+        m_uv0 = eastl::vector<Vec2f>(copy.m_uv0);
         m_normals = eastl::vector<Vec3f>(copy.m_normals);
         m_colors = eastl::vector<Vec4f>(copy.m_colors);
         m_indices = eastl::vector<uint16_t>(copy.m_indices);
@@ -89,6 +96,7 @@ namespace An
     Primitive& Primitive::operator=(Primitive&& copy)
     {
         m_vertices = eastl::move(copy.m_vertices);
+        m_uv0 = eastl::move(copy.m_uv0);
         m_normals = eastl::move(copy.m_normals);
         m_colors = eastl::move(copy.m_colors);
         m_indices = eastl::move(copy.m_indices);
@@ -97,11 +105,13 @@ namespace An
         m_localBounds = copy.m_localBounds;
 
         m_vertexBuffer = copy.m_vertexBuffer;
+        m_uv0Buffer = copy.m_uv0Buffer;
         m_normalsBuffer = copy.m_normalsBuffer;
         m_colorBuffer = copy.m_colorBuffer;
         m_indexBuffer = copy.m_indexBuffer;
 
         copy.m_vertexBuffer = BGFX_INVALID_HANDLE;
+        copy.m_uv0Buffer = BGFX_INVALID_HANDLE;
         copy.m_normalsBuffer = BGFX_INVALID_HANDLE;
         copy.m_colorBuffer = BGFX_INVALID_HANDLE;
         copy.m_indexBuffer = BGFX_INVALID_HANDLE;
@@ -115,6 +125,8 @@ namespace An
     {
         if (bgfx::isValid(m_vertexBuffer)) 
             bgfx::destroy(m_vertexBuffer);
+        if (bgfx::isValid(m_uv0Buffer)) 
+            bgfx::destroy(m_uv0Buffer);
         if (bgfx::isValid(m_normalsBuffer)) 
             bgfx::destroy(m_normalsBuffer);
         if (bgfx::isValid(m_colorBuffer)) 
@@ -123,6 +135,7 @@ namespace An
             bgfx::destroy(m_indexBuffer);
 
         m_vertexBuffer = BGFX_INVALID_HANDLE;
+        m_uv0Buffer = BGFX_INVALID_HANDLE;
         m_normalsBuffer = BGFX_INVALID_HANDLE;
         m_colorBuffer = BGFX_INVALID_HANDLE;
         m_indexBuffer = BGFX_INVALID_HANDLE;
@@ -152,6 +165,11 @@ namespace An
         s_normLayout
 			.begin()
 			.add(bgfx::Attrib::Normal, 3, bgfx::AttribType::Float)
+			.end();
+        
+        s_uv0Layout
+			.begin()
+			.add(bgfx::Attrib::TexCoord0, 2, bgfx::AttribType::Float)
 			.end();
     }
 
@@ -195,6 +213,12 @@ namespace An
         {
 	        uint32_t size = uint32_t(sizeof(Vec3f) * m_vertices.size());
             m_vertexBuffer = bgfx::createVertexBuffer(bgfx::makeRef(m_vertices.data(), size), s_vertLayout);
+        }
+
+        if (!m_uv0.empty()) 
+        {
+	        uint32_t size = uint32_t(sizeof(Vec2f) * m_uv0.size());
+            m_uv0Buffer = bgfx::createVertexBuffer(bgfx::makeRef(m_uv0.data(), size), s_uv0Layout);
         }
 
         if (!m_normals.empty()) 

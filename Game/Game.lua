@@ -24,6 +24,7 @@ project "Game"
 		"bgfx",
 		"shaderc",
 		"bimg",
+		"bimg_decode",
 		"bx",
 		"SDL2",
 		"SDL2main",
