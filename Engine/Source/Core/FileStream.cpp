@@ -105,7 +105,7 @@ namespace An
         SDL_RWread(m_rwops, buffer, length, 1);
         buffer[length] = '\0';
 
-        eastl::string result = buffer;
+        eastl::string result(buffer, buffer + length);
         delete[] buffer;
         return result;
     }

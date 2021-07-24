@@ -6,6 +6,7 @@
 #include "Text.h"
 #include "Shader.h"
 #include "Model.h"
+#include "Image.h"
 #include "Core/FileSystem.h"
 
 #include <EASTL/map.h>
@@ -175,6 +176,10 @@ namespace An
         else if (fileType == ".fs" || fileType == ".vs")
         {
             asset.m_pAssetData = new Shader();
+        }
+        else if (fileType == ".png")
+        {
+            asset.m_pAssetData = new Image();
         }
         else if (fileType == ".gltf")
         {
