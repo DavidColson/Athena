@@ -24,30 +24,6 @@
 // This defines a macro called min somehow? We should avoid it at all costs and include it last
 #include <SDL_syswm.h>
 
-struct PosColVert
-{
-	Vec3f m_pos;
-	uint32_t m_abgr;
-
-	static void init()
-	{
-		posLayout
-			.begin()
-			.add(bgfx::Attrib::Position, 3, bgfx::AttribType::Float)
-			.end();
-
-		colLayout
-			.begin()
-			.add(bgfx::Attrib::Color0, 4, bgfx::AttribType::Uint8, true)
-			.end();
-	};
-
-	static bgfx::VertexLayout posLayout;
-	static bgfx::VertexLayout colLayout;
-};
-bgfx::VertexLayout PosColVert::posLayout;
-bgfx::VertexLayout PosColVert::colLayout;
-
 void MakeWindow()
 {
 	{
@@ -254,7 +230,7 @@ void MakeWindow()
 
 			bgfx::dbgTextClear();
 			bgfx::dbgTextPrintf(10, 10, 0x0f, "Hello world");
-			bgfx::setDebug(BGFX_DEBUG_TEXT);
+			bgfx::setDebug(BGFX_DEBUG_TEXT | BGFX_DEBUG_STATS);
 			bgfx::frame();
 
 			An::AssetDB::UpdateHotReloading();
