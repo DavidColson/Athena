@@ -1,168 +1,15 @@
 // Copyright 2020-2021 David Colson. All rights reserved.
 
-#include "TypeSystem.h"
-#include "Core/ErrorHandling.h"
+#include "TypeDataPrimitives.h"
 
-// @ I'd like these custom types to be taken outside of the core of the type system
 #include "AssetDatabase/AssetDatabase.h"
-#include "Core/Scanning.h"
-
+#include "Core/Log.h"
 #include <EASTL/string.h>
-
+#include "TypeDatabase.h"
 
 namespace An
 {
-	// ***********************************************************************
-
-	TypeData::~TypeData()
-	{
-		delete m_pTypeOps;
-
-		// TODO: For loop over members and delete them
-	}
-
-	// ***********************************************************************
-
-	OwnedTypedPtr TypeData::New()
-	{
-		return m_pTypeOps->New();
-	}
-
-	// ***********************************************************************
-
-	bool TypeData::operator==(const TypeData& other)
-	{
-		return other.m_id == this->m_id;
-	}
-
-	// ***********************************************************************
-
-	bool TypeData::operator!=(const TypeData& other)
-	{
-		return other.m_id != this->m_id;
-	}
-
-	// ***********************************************************************
-
-	bool TypeData::IsValid()
-	{
-		return m_id != 0;
-	}
-
-	// ***********************************************************************
-
-	TypeData_Struct& TypeData::AsStruct()
-	{
-		return *static_cast<TypeData_Struct*>(this);
-	}
-
-	// ***********************************************************************
-
-	TypeData_Enum& TypeData::AsEnum()
-	{
-		return *static_cast<TypeData_Enum*>(this);
-	}
-
-
-
-
-	// ***********************************************************************
-
-	JsonValue TypeData_Struct::ToJson(TypedPtr value)
-	{
-		JsonValue result = JsonValue::NewObject();
-
-		// TODO: Order of members is lost using this method. We have our member offsets, see if we can use it somehow
-		for (Member& member : value.GetType().AsStruct())
-		{
-			result[member.GetName()] = member.GetType().ToJson(member.Get(value));
-		}
-
-		return result;
-	}
-
-	// ***********************************************************************
-
-	OwnedTypedPtr TypeData_Struct::FromJson(const JsonValue& json)
-	{
-		OwnedTypedPtr var = New();
-
-		for (const eastl::pair<eastl::string, JsonValue>& val : *json.m_internalData.m_pObject)
-		{
-			if (MemberExists(val.first.c_str()))
-			{
-				Member& mem = GetMember(val.first.c_str());
-
-				OwnedTypedPtr parsed = mem.GetType().FromJson(val.second);
-				mem.Set(var.Ref(), parsed.Ref());   
-			}
-		}
-
-		return var;
-	}
-
-	// ***********************************************************************
-
-	bool TypeData_Struct::MemberExists(const char* _name)
-	{
-		return m_memberOffsets.count(_name) == 1;
-	}
-
-	// ***********************************************************************
-
-	Member& TypeData_Struct::GetMember(const char* _name)
-	{
-		ASSERT(m_memberOffsets.count(_name) == 1, "The member you're trying to access doesn't exist");
-		return *m_members[m_memberOffsets[_name]];
-	}
-
-	// ***********************************************************************
-
-	Member& TypeData_Struct::MemberIterator::operator*() const 
-	{ 
-		return *m_it->second;
-	}
-
-	// ***********************************************************************
-
-	bool TypeData_Struct::MemberIterator::operator==(const MemberIterator& other) const 
-	{
-		return m_it == other.m_it;
-	}
-
-	// ***********************************************************************
-
-	bool TypeData_Struct::MemberIterator::operator!=(const MemberIterator& other) const 
-	{
-		return m_it != other.m_it;
-	}
-
-	// ***********************************************************************
-
-	TypeData_Struct::MemberIterator& TypeData_Struct::MemberIterator::operator++()
-	{
-		++m_it;
-		return *this;
-	}
-
-	// ***********************************************************************
-
-	const TypeData_Struct::MemberIterator TypeData_Struct::begin() 
-	{
-		return MemberIterator(m_members.begin());
-	}
-
-	// ***********************************************************************
-
-	const TypeData_Struct::MemberIterator TypeData_Struct::end()
-	{
-		return MemberIterator(m_members.end());
-	}
-
-
-
-
-	// ***********************************************************************
+    // ***********************************************************************
 
 	TypeData_Enum::TypeData_Enum(uint32_t _id, const char* _name, size_t _size, TypeDataOps* _pTypeOps, TypeData::CastableTo _castableTo, std::initializer_list<Enumerator> cats) : TypeData(_id, _name, _size, _pTypeOps, _castableTo), categories(cats)
 	{
@@ -195,27 +42,9 @@ namespace An
 
 
 
-	namespace TypeDatabase
-	{
-		Data* TypeDatabase::Data::m_pInstance{ nullptr };
 
-		bool TypeExists(const char* name)
-		{
-			if (Data::Get().typeNames.count(name) == 1)
-				return true;
-			else
-				return false;
-		}
 
-		TypeData& GetFromString(const char* name)
-		{
-			return *Data::Get().typeNames[name];
-		}
-	}
-
-	// Primitive Types
-	//////////////////
-
+	// ***********************************************************************
 
 	struct TypeData_Int : TypeData
 	{
@@ -370,7 +199,6 @@ namespace An
 		static TypeData_Bool typeData;
 		return typeData;
 	}
-
 
 
 

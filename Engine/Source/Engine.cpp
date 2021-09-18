@@ -13,7 +13,7 @@
 #include "Core/Vec3.h"
 #include "Core/Matrix.h"
 #include "Input.h"
-#include "TypeSystem/TypeSystem.h"
+#include "TypeSystem/TypeDatabase.h"
 
 #include <SDL.h>
 #include <bgfx/bgfx.h>

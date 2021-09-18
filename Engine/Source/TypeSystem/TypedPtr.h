@@ -2,17 +2,17 @@
 
 #pragma once
 
+#include "Core/ErrorHandling.h"
 
 namespace An
 {
     struct TypeData;
-    class OwnedTypedPtr;
     
     // Just a reference to some data stored by an OwnedTypePtr
-    class TypedPtr
+    struct TypedPtr
     {
         friend struct Member;
-    public:
+
         TypedPtr(void* ptr, TypeData* pTypeData);
         ~TypedPtr();
 
@@ -33,11 +33,11 @@ namespace An
     };
 
     // Owns data for real, will delete it when the ptr gets deleted
-    class OwnedTypedPtr
+    struct OwnedTypedPtr
     {
         template <typename T>
         friend struct TypeDataOps_Internal;
-    public:
+
         OwnedTypedPtr();
         ~OwnedTypedPtr();
 
@@ -58,17 +58,77 @@ namespace An
         TypeData& GetType();
 
         template <typename T, typename... Args>
-        static OwnedTypedPtr New(Args... args)
-        {
-            OwnedTypedPtr res;
-            res.m_pData = new T{eastl::forward<Args>(args)...};
-            res.m_pType = &TypeDatabase::Get<T>();
-            return eastl::move(res);
-        }
+        static OwnedTypedPtr New(Args... args);
 
     private:
         void* m_pData{ nullptr };
         TypeData* m_pType{ nullptr };
     };
 
+
+    // -----------------------------------
+	// ---------IMPLEMENTATION------------
+	// -----------------------------------
+
+    
+	// ***********************************************************************
+
+	template <typename T>
+	T* TypedPtr::Cast()
+	{
+		ASSERT(*m_pType == TypeDatabase::Get<T>(), "Attempting to cast to wrong type");
+		return static_cast<T*>(m_pData);
+	}
+
+	// ***********************************************************************
+
+	template <typename T>
+	T* TypedPtr::SafeCast()
+	{
+		return (m_pType == TypeDatabase::Get<T>()) ? static_cast<T*>(m_pData) : nullptr;
+	}
+
+	// ***********************************************************************
+
+	template <typename T>
+	T& TypedPtr::CastRef()
+	{
+		ASSERT(*m_pType == TypeDatabase::Get<T>(), "Attempting to cast to wrong type");
+		return *static_cast<T*>(m_pData);
+	}
+
+	// ***********************************************************************
+
+	template <typename T>
+	T* OwnedTypedPtr::Cast()
+	{
+		ASSERT(*m_pType == TypeDatabase::Get<T>(), "Attempting to cast to wrong type");
+		return static_cast<T*>(m_pData);
+	}
+
+	// ***********************************************************************
+
+	template <typename T>
+	T* OwnedTypedPtr::SafeCast()
+	{
+		return (m_pType == TypeDatabase::Get<T>()) ? static_cast<T*>(m_pData) : nullptr;
+	}
+
+	// ***********************************************************************
+
+	template <typename T>
+	T& OwnedTypedPtr::CastRef()
+	{
+		ASSERT(*m_pType == TypeDatabase::Get<T>(), "Attempting to cast to wrong type");
+		return *static_cast<T*>(m_pData);
+	}
+
+    template <typename T, typename... Args>
+    static OwnedTypedPtr OwnedTypedPtr::New(Args... args)
+    {
+        OwnedTypedPtr res;
+        res.m_pData = new T{eastl::forward<Args>(args)...};
+        res.m_pType = &TypeDatabase::Get<T>();
+        return eastl::move(res);
+    }
 }

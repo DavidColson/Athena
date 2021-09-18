@@ -2,7 +2,7 @@
 
 #include "TypedPtr.h"
 
-#include "TypeSystem.h"
+#include "TypeDatabase.h"
 
 namespace An
 {
