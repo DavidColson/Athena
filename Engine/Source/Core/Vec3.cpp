@@ -1,3 +1,5 @@
+// Copyright 2020-2021 David Colson. All rights reserved.
+
 #include "Vec3.h"
 
 // REFLECT_TEMPLATED_BEGIN(Vec3f)

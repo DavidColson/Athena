@@ -1,3 +1,5 @@
+// Copyright 2020-2021 David Colson. All rights reserved.
+
 #include "Vec4.h"
 
 // REFLECT_TEMPLATED_BEGIN(Vec4f)

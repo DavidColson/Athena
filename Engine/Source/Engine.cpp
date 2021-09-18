@@ -207,7 +207,11 @@ void MakeWindow()
 					| BGFX_STATE_DEPTH_TEST_LESS
 					| BGFX_STATE_MSAA;
 
-			Matrixf rotate = Matrixf::MakeRotation(Vec3f(-1.5f, 0.8f, 0.0f));
+			static float x = 0.0f;
+
+			x+= 0.001f;
+
+			Matrixf rotate = Matrixf::MakeRotation(Vec3f(-1.5f, 0.8f, x));
 
 			// Set model matrix for rendering.
 			bgfx::setTransform(&rotate);
@@ -233,7 +237,7 @@ void MakeWindow()
 			bgfx::setDebug(BGFX_DEBUG_TEXT | BGFX_DEBUG_STATS);
 			bgfx::frame();
 
-			An::AssetDB::UpdateHotReloading();
+			//An::AssetDB::UpdateHotReloading();
 
 			deltaTime = float(SDL_GetPerformanceCounter() - frameStart) / SDL_GetPerformanceFrequency();
 		}

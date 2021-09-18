@@ -1,3 +1,5 @@
+// Copyright 2020-2021 David Colson. All rights reserved.
+
 #include "Model.h"
 
 #include "Core/Json.h"

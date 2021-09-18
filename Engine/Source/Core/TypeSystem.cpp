@@ -1,3 +1,5 @@
+// Copyright 2020-2021 David Colson. All rights reserved.
+
 #include "TypeSystem.h"
 #include "ErrorHandling.h"
 
@@ -14,7 +16,7 @@ namespace An
 
 	TypeData::~TypeData()
 	{
-		delete pTypeOps;
+		delete m_pTypeOps;
 
 		// TODO: For loop over members and delete them
 	}
@@ -23,28 +25,28 @@ namespace An
 
 	Variant TypeData::New()
 	{
-		return pTypeOps->New();
+		return m_pTypeOps->New();
 	}
 
 	// ***********************************************************************
 
 	bool TypeData::operator==(const TypeData& other)
 	{
-		return other.id == this->id;
+		return other.m_id == this->m_id;
 	}
 
 	// ***********************************************************************
 
 	bool TypeData::operator!=(const TypeData& other)
 	{
-		return other.id != this->id;
+		return other.m_id != this->m_id;
 	}
 
 	// ***********************************************************************
 
 	bool TypeData::IsValid()
 	{
-		return id != 0;
+		return m_id != 0;
 	}
 
 	// ***********************************************************************
@@ -73,7 +75,7 @@ namespace An
 		// TODO: Order of members is lost using this method. We have our member offsets, see if we can use it somehow
 		for (Member& member : value.GetType().AsStruct())
 		{
-			result[member.name] = member.GetType().ToJson(member.Get(value));
+			result[member.m_name] = member.GetType().ToJson(member.Get(value));
 		}
 
 		return result;
@@ -103,43 +105,43 @@ namespace An
 
 	bool TypeData_Struct::MemberExists(const char* _name)
 	{
-		return memberOffsets.count(_name) == 1;
+		return m_memberOffsets.count(_name) == 1;
 	}
 
 	// ***********************************************************************
 
 	Member& TypeData_Struct::GetMember(const char* _name)
 	{
-		ASSERT(memberOffsets.count(_name) == 1, "The member you're trying to access doesn't exist");
-		return *members[memberOffsets[_name]];
+		ASSERT(m_memberOffsets.count(_name) == 1, "The member you're trying to access doesn't exist");
+		return *m_members[m_memberOffsets[_name]];
 	}
 
 	// ***********************************************************************
 
 	Member& TypeData_Struct::MemberIterator::operator*() const 
 	{ 
-		return *it->second;
+		return *m_it->second;
 	}
 
 	// ***********************************************************************
 
 	bool TypeData_Struct::MemberIterator::operator==(const MemberIterator& other) const 
 	{
-		return it == other.it;
+		return m_it == other.m_it;
 	}
 
 	// ***********************************************************************
 
 	bool TypeData_Struct::MemberIterator::operator!=(const MemberIterator& other) const 
 	{
-		return it != other.it;
+		return m_it != other.m_it;
 	}
 
 	// ***********************************************************************
 
 	TypeData_Struct::MemberIterator& TypeData_Struct::MemberIterator::operator++()
 	{
-		++it;
+		++m_it;
 		return *this;
 	}
 
@@ -147,14 +149,14 @@ namespace An
 
 	const TypeData_Struct::MemberIterator TypeData_Struct::begin() 
 	{
-		return MemberIterator(members.begin());
+		return MemberIterator(m_members.begin());
 	}
 
 	// ***********************************************************************
 
 	const TypeData_Struct::MemberIterator TypeData_Struct::end()
 	{
-		return MemberIterator(members.end());
+		return MemberIterator(m_members.end());
 	}
 
 
@@ -164,7 +166,7 @@ namespace An
 
 	TypeData_Enum::TypeData_Enum(uint32_t _id, const char* _name, size_t _size, TypeDataOps* _pTypeOps, TypeData::CastableTo _castableTo, std::initializer_list<Enumerator> cats) : TypeData(_id, _name, _size, _pTypeOps, _castableTo), categories(cats)
 	{
-		TypeDatabase::Data::Get().typeNames.emplace(name, static_cast<TypeData*>(this));
+		TypeDatabase::Data::Get().typeNames.emplace(m_name, static_cast<TypeData*>(this));
 	}
 
 	// ***********************************************************************
@@ -173,7 +175,7 @@ namespace An
 	{
 		// This will perform a reinterpret cast to int, probably enforce enums to be ints somehow
 		int value = var.GetValue<int>();
-		return JsonValue(categories[value].identifier);
+		return JsonValue(categories[value].m_identifier);
 	}
 
 	// ***********************************************************************
@@ -183,7 +185,7 @@ namespace An
 
 		eastl::vector<Enumerator>::iterator it = eastl::find_if(categories.begin(), categories.end(), [&val](Enumerator& enumerator) 
 		{
-			return enumerator.identifier == val.ToString();
+			return enumerator.m_identifier == val.ToString();
 		});
 
 		if (it == categories.end())
@@ -198,7 +200,7 @@ namespace An
 
 	namespace TypeDatabase
 	{
-		Data* TypeDatabase::Data::pInstance{ nullptr };
+		Data* TypeDatabase::Data::m_pInstance{ nullptr };
 
 		bool TypeExists(const char* name)
 		{
@@ -224,7 +226,7 @@ namespace An
 		TypeData_Int() : TypeData{"int", sizeof(int)} 
 		{
 			TypeDatabase::Data::Get().typeNames.emplace("int", this);
-			id = Type::Index<int>();
+			m_id = Type::Index<int>();
 		}
 
 		virtual JsonValue ToJson(Variant var) override
@@ -255,7 +257,7 @@ namespace An
 		TypeData_Float() : TypeData{"float", sizeof(float)} 
 		{
 			TypeDatabase::Data::Get().typeNames.emplace("float", this);
-			id = Type::Index<float>();
+			m_id = Type::Index<float>();
 		}
 
 		virtual JsonValue ToJson(Variant var) override
@@ -286,7 +288,7 @@ namespace An
 		TypeData_Double() : TypeData{"double", sizeof(double)} 
 		{
 			TypeDatabase::Data::Get().typeNames.emplace("double", this);
-			id = Type::Index<double>();
+			m_id = Type::Index<double>();
 		}
 
 		virtual JsonValue ToJson(Variant var) override
@@ -317,7 +319,7 @@ namespace An
 		TypeData_String() : TypeData{"eastl::string", sizeof(eastl::string)} 
 		{
 			TypeDatabase::Data::Get().typeNames.emplace("eastl::string", this);
-			id = Type::Index<eastl::string>();
+			m_id = Type::Index<eastl::string>();
 		}
 
 		virtual JsonValue ToJson(Variant var) override
@@ -348,7 +350,7 @@ namespace An
 		TypeData_Bool() : TypeData{"bool", sizeof(bool)} 
 		{
 			TypeDatabase::Data::Get().typeNames.emplace("bool", this);
-			id = Type::Index<bool>();
+			m_id = Type::Index<bool>();
 		}
 
 		virtual JsonValue ToJson(Variant var) override
@@ -412,7 +414,7 @@ namespace An
 		TypeData_AssetHandle() : TypeData{"AssetHandle", sizeof(AssetHandle)} 
 		{
 			TypeDatabase::Data::Get().typeNames.emplace("AssetHandle", this);
-			id = Type::Index<AssetHandle>();
+			m_id = Type::Index<AssetHandle>();
 		}
 
 		virtual JsonValue ToJson(Variant var) override

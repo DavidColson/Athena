@@ -1,3 +1,5 @@
+// Copyright 2020-2021 David Colson. All rights reserved.
+
 #include "Image.h"
 
 #include "Core/FileSystem.h"

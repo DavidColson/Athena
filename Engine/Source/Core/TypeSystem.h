@@ -1,3 +1,5 @@
+// Copyright 2020-2021 David Colson. All rights reserved.
+
 #pragma once
 
 #include <EASTL/string.h>
@@ -76,18 +78,18 @@ namespace An
 		/**
 		 * Constructors used for building typedatas, not for use outside of REFLECT macros
 		 **/
-		TypeData(const char* _name, size_t _size) : name(_name), size(_size) {}
-		TypeData(uint32_t _id, const char* _name, size_t _size, TypeDataOps* _pTypeOps, CastableTo _castableTo) : id(_id), name(_name), size(_size), pTypeOps(_pTypeOps), castableTo(_castableTo) {}
+		TypeData(const char* name, size_t size) : m_name(name), m_size(size) {}
+		TypeData(uint32_t id, const char* name, size_t size, TypeDataOps* pTypeOps, CastableTo castableTo) : m_id(id), m_name(name), m_size(size), m_pTypeOps(pTypeOps), m_castableTo(castableTo) {}
 		~TypeData();
 
-		uint32_t id{ 0 };
-		const char* name;
-		size_t size;
-		TypeDataOps* pTypeOps{ nullptr };
-		CastableTo castableTo{ CastableTo::None };
+		uint32_t m_id{ 0 };
+		const char* m_name;
+		size_t m_size;
+		TypeDataOps* m_pTypeOps{ nullptr };
+		CastableTo m_castableTo{ CastableTo::None };
 
 		// temp until we have type attributes
-		bool isComponent{ false };
+		bool m_isComponent{ false };
 	};
 
 
@@ -134,7 +136,7 @@ namespace An
 		 **/
 		struct MemberIterator
 		{
-			MemberIterator(eastl::map<size_t, Member*>::iterator _it) : it(_it) {}
+			MemberIterator(eastl::map<size_t, Member*>::iterator it) : m_it(it) {}
 
 			Member& operator*() const;
 
@@ -144,7 +146,7 @@ namespace An
 
 			MemberIterator& operator++();
 
-			eastl::map<size_t, Member*>::iterator it;
+			eastl::map<size_t, Member*>::iterator m_it;
 		};
 
 		/**
@@ -162,9 +164,9 @@ namespace An
 		 **/
 		TypeData_Struct(void(*initFunc)(TypeData_Struct*)) : TypeData( nullptr, 0 ) { initFunc(this); }
 
-		eastl::map<size_t, Member*> members;
-		eastl::map<eastl::string, size_t> memberOffsets;
-		TypeData_Struct* pParentType{ nullptr };
+		eastl::map<size_t, Member*> m_members;
+		eastl::map<eastl::string, size_t> m_memberOffsets;
+		TypeData_Struct* m_pParentType{ nullptr };
 	};
 
 	struct Member
@@ -172,7 +174,7 @@ namespace An
 		/**
 		 * String identifier of this member
 		 **/
-		const char* name;
+		const char* m_name;
 
 		/**
 		 * Check to determine if this member is of type T
@@ -215,7 +217,7 @@ namespace An
 		/**
 		 *	Constructor, for internal use in REFLEC_* macros, do not use elsewhere
 		**/
-		Member(const char* _name) : name(_name) {}
+		Member(const char* name) : m_name(name) {}
 	};
 
 	/**
@@ -246,9 +248,9 @@ namespace An
 			selfTypeData->id = Type::Index<XX>();\
 			selfTypeData->name = #ReflectedStruct;\
 			selfTypeData->size = sizeof(XX);\
-			selfTypeData->pTypeOps = new TypeDataOps_Internal<XX>;\
-			selfTypeData->castableTo = TypeData::Struct;\
-			selfTypeData->members = {
+			selfTypeData->m_pTypeOps = new TypeDataOps_Internal<XX>;\
+			selfTypeData->m_castableTo = TypeData::Struct;\
+			selfTypeData->m_members = {
 
 	/**
 	 * Used to specify the structure of a type for derived types, again used in cpp files
@@ -262,10 +264,10 @@ namespace An
 			selfTypeData->id = Type::Index<XX>();\
 			selfTypeData->name = #ReflectedStruct;\
 			selfTypeData->size = sizeof(XX);\
-			selfTypeData->pTypeOps = new TypeDataOps_Internal<XX>;\
-			selfTypeData->castableTo = TypeData::Struct;\
-			selfTypeData->pParentType = &ParentStruct::staticTypeData;\
-			selfTypeData->members = {
+			selfTypeData->m_pTypeOps = new TypeDataOps_Internal<XX>;\
+			selfTypeData->m_castableTo = TypeData::Struct;\
+			selfTypeData->m_pParentType = &ParentStruct::staticTypeData;\
+			selfTypeData->m_members = {
 
 	/**
 	 * Used to specify a member inside a REFLECT_BEGIN/END pair
@@ -278,7 +280,7 @@ namespace An
 	 **/
 	#define REFLECT_END()\
 			};\
-			for (const eastl::pair<size_t, Member*>& mem : selfTypeData->members) { selfTypeData->memberOffsets[mem.second->name] = mem.first; }\
+			for (const eastl::pair<size_t, Member*>& mem : selfTypeData->m_members) { selfTypeData->m_memberOffsets[mem.second->name] = mem.first; }\
 		}
 
 
@@ -295,9 +297,9 @@ namespace An
 			selfTypeData->id = Type::Index<XX>();\
 			selfTypeData->name = #ReflectedStruct;\
 			selfTypeData->size = sizeof(XX);\
-			selfTypeData->pTypeOps = new TypeDataOps_Internal<XX>;\
-			selfTypeData->castableTo = TypeData::Struct;\
-			selfTypeData->members = {
+			selfTypeData->m_pTypeOps = new TypeDataOps_Internal<XX>;\
+			selfTypeData->m_castableTo = TypeData::Struct;\
+			selfTypeData->m_members = {
 	
 	// TODO: This should not be needed anymore because we can now ask IsDerivedFrom<IComponent>
 	/**
@@ -311,12 +313,12 @@ namespace An
 			using XX = ReflectedStruct;\
 			TypeDatabase::Data::Get().typeNames.emplace(#ReflectedStruct, selfTypeData);\
 			selfTypeData->id = Type::Index<XX>();\
-			selfTypeData->isComponent = true;\
+			selfTypeData->m_isComponent = true;\
 			selfTypeData->name = #ReflectedStruct;\
 			selfTypeData->size = sizeof(XX);\
-			selfTypeData->pTypeOps = new TypeDataOps_Internal<XX>;\
-			selfTypeData->castableTo = TypeData::Struct;\
-			selfTypeData->members = {
+			selfTypeData->m_pTypeOps = new TypeDataOps_Internal<XX>;\
+			selfTypeData->m_castableTo = TypeData::Struct;\
+			selfTypeData->m_members = {
 
 
 
@@ -328,8 +330,8 @@ namespace An
 
 	struct Enumerator
 	{
-		eastl::string identifier;
-		int value;
+		eastl::string m_identifier;
+		int m_value;
 	};
 	struct TypeData_Enum : public TypeData
 	{
@@ -443,15 +445,15 @@ namespace An
 		{
 			static Data& Get() 
 			{
-				if (pInstance == nullptr)
-					pInstance = new Data();
-				return *pInstance;
+				if (m_pInstance == nullptr)
+					m_pInstance = new Data();
+				return *m_pInstance;
 			}
 			eastl::map<eastl::string, TypeData*> typeNames;
 			uint32_t typeCounter{ 0 };
 
 		private:
-			static Data* pInstance;
+			static Data* m_pInstance;
 		};
 
 		template<typename T>
@@ -614,15 +616,15 @@ namespace An
 	bool TypeData_Struct::IsDerivedFrom()
 	{
 		TypeData& testType = TypeDatabase::Get<Type>();
-		if (testType.id == this->id)
+		if (testType.m_id == this->m_id)
 			return true;
 
-		TypeData* pParent = pParentType;
+		TypeData* pParent = m_pParentType;
 		while (pParent != nullptr)
 		{
 			if (*pParent == testType)
 				return true;
-			pParent = pParent->AsStruct().pParentType;
+			pParent = pParent->AsStruct().m_pParentType;
 		}
 		return false;
 	}

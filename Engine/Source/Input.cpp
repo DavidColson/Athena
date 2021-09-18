@@ -1,4 +1,6 @@
 
+// Copyright 2020-2021 David Colson. All rights reserved.
+
 #include "Input.h"
 
 #include <SDL_events.h>
