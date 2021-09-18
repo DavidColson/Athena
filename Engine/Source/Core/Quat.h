@@ -2,13 +2,15 @@
 
 #pragma once
 
+#include "TypeSystem/TypeDataStruct.h"
+
 template<typename T> struct Matrix;
 template<typename T> struct Vec3;
 
 template<typename T>
 struct Quat
 {
-    //REFLECT()
+    REFLECT()
 
     T x;
     T y;

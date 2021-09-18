@@ -30,6 +30,7 @@ struct TestStruct
 	float m_myFloat{ 50.25f };
 	int m_myInt{ 7 };
 	eastl::string m_myString{ "Hello World" };
+	Vec3f myVec;
 
 	REFLECT()
 };
@@ -38,6 +39,7 @@ REFLECT_BEGIN(TestStruct)
 REFLECT_MEMBER(m_myFloat)
 REFLECT_MEMBER(m_myInt)
 REFLECT_MEMBER(m_myString)
+REFLECT_MEMBER(myVec)
 REFLECT_END()
 
 void MakeWindow()

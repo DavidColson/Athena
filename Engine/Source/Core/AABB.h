@@ -8,7 +8,7 @@
 template<typename T>
 struct AABB
 {
-    //REFLECT()
+    REFLECT()
 
     Vec3<T> min;
     Vec3<T> max;

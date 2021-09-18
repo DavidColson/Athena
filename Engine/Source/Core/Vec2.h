@@ -3,6 +3,7 @@
 #pragma once
 
 #include "EASTL/string.h"
+#include "TypeSystem/TypeDataStruct.h"
 
 template<typename T>
 struct Vec3;
@@ -13,7 +14,7 @@ struct Vec4;
 template<typename T>
 struct Vec2
 {
-	//REFLECT()
+	REFLECT()
 
 	Vec2() : x(T()), y(T()) {}
 	Vec2(T val) : x(val), y(val) {}

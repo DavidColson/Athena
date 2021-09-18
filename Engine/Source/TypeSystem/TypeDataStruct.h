@@ -190,17 +190,17 @@ namespace An
 	 *  Special version of the begin macro for types that are template specializations, such as Vec<float>
 	 **/
 	#define REFLECT_TEMPLATED_BEGIN(ReflectedStruct)\
-		TypeData_Struct ReflectedStruct::staticTypeData{ReflectedStruct::initReflection};\
-		TypeData_Struct& ReflectedStruct::GetTypeData() { return ReflectedStruct::staticTypeData; }\
+		An::TypeData_Struct ReflectedStruct::staticTypeData{ReflectedStruct::initReflection};\
+		An::TypeData_Struct& ReflectedStruct::GetTypeData() { return ReflectedStruct::staticTypeData; }\
 		template<>\
-		void ReflectedStruct::initReflection(TypeData_Struct* selfTypeData) {\
+		void ReflectedStruct::initReflection(An::TypeData_Struct* selfTypeData) {\
 			using XX = ReflectedStruct;\
-			TypeDatabase::Data::Get().typeNames.emplace(#ReflectedStruct, selfTypeData);\
-			selfTypeData->id = Type::Index<XX>();\
-			selfTypeData->name = #ReflectedStruct;\
-			selfTypeData->size = sizeof(XX);\
-			selfTypeData->m_pTypeOps = new TypeDataOps_Internal<XX>;\
-			selfTypeData->m_castableTo = TypeData::Struct;\
+			An::TypeDatabase::Data::Get().typeNames.emplace(#ReflectedStruct, selfTypeData);\
+			selfTypeData->m_id = An::Type::Index<XX>();\
+			selfTypeData->m_name = #ReflectedStruct;\
+			selfTypeData->m_size = sizeof(XX);\
+			selfTypeData->m_pTypeOps = new An::TypeDataOps_Internal<XX>;\
+			selfTypeData->m_castableTo = An::TypeData::Struct;\
 			selfTypeData->m_members = {
 
 
