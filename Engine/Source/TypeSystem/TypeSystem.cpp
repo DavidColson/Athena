@@ -1,11 +1,11 @@
 // Copyright 2020-2021 David Colson. All rights reserved.
 
 #include "TypeSystem.h"
-#include "ErrorHandling.h"
+#include "Core/ErrorHandling.h"
 
 // @ I'd like these custom types to be taken outside of the core of the type system
 #include "AssetDatabase/AssetDatabase.h"
-#include "Scanning.h"
+#include "Core/Scanning.h"
 
 #include <EASTL/string.h>
 
@@ -23,7 +23,7 @@ namespace An
 
 	// ***********************************************************************
 
-	Variant TypeData::New()
+	OwnedTypedPtr TypeData::New()
 	{
 		return m_pTypeOps->New();
 	}
@@ -68,14 +68,14 @@ namespace An
 
 	// ***********************************************************************
 
-	JsonValue TypeData_Struct::ToJson(Variant value)
+	JsonValue TypeData_Struct::ToJson(TypedPtr value)
 	{
 		JsonValue result = JsonValue::NewObject();
 
 		// TODO: Order of members is lost using this method. We have our member offsets, see if we can use it somehow
 		for (Member& member : value.GetType().AsStruct())
 		{
-			result[member.m_name] = member.GetType().ToJson(member.Get(value));
+			result[member.GetName()] = member.GetType().ToJson(member.Get(value));
 		}
 
 		return result;
@@ -83,9 +83,9 @@ namespace An
 
 	// ***********************************************************************
 
-	Variant TypeData_Struct::FromJson(const JsonValue& json)
+	OwnedTypedPtr TypeData_Struct::FromJson(const JsonValue& json)
 	{
-		Variant var = New();
+		OwnedTypedPtr var = New();
 
 		for (const eastl::pair<eastl::string, JsonValue>& val : *json.m_internalData.m_pObject)
 		{
@@ -93,8 +93,8 @@ namespace An
 			{
 				Member& mem = GetMember(val.first.c_str());
 
-				Variant parsed = mem.GetType().FromJson(val.second);
-				mem.Set(var, parsed);   
+				OwnedTypedPtr parsed = mem.GetType().FromJson(val.second);
+				mem.Set(var.Ref(), parsed.Ref());   
 			}
 		}
 
@@ -171,16 +171,15 @@ namespace An
 
 	// ***********************************************************************
 
-	JsonValue TypeData_Enum::ToJson(Variant var)
+	JsonValue TypeData_Enum::ToJson(TypedPtr var)
 	{
 		// This will perform a reinterpret cast to int, probably enforce enums to be ints somehow
-		int value = var.GetValue<int>();
-		return JsonValue(categories[value].m_identifier);
+		return JsonValue(categories[var.CastRef<int>()].m_identifier);
 	}
 
 	// ***********************************************************************
 
-	Variant TypeData_Enum::FromJson(const JsonValue& val)
+	OwnedTypedPtr TypeData_Enum::FromJson(const JsonValue& val)
 	{
 
 		eastl::vector<Enumerator>::iterator it = eastl::find_if(categories.begin(), categories.end(), [&val](Enumerator& enumerator) 
@@ -191,9 +190,7 @@ namespace An
 		if (it == categories.end())
 			Log::Crit("Attempting to create an enum from an invalid jsonValue: %s", val.ToString().c_str());
 
-		Variant result = New();
-		result.GetValue<int>() = (int)eastl::distance(categories.begin(), it);
-		return result;
+		return OwnedTypedPtr::New<int>((int)eastl::distance(categories.begin(), it));
 	}
 
 
@@ -219,7 +216,6 @@ namespace An
 	// Primitive Types
 	//////////////////
 
-	// @TODO: Set typeDataops!
 
 	struct TypeData_Int : TypeData
 	{
@@ -227,16 +223,17 @@ namespace An
 		{
 			TypeDatabase::Data::Get().typeNames.emplace("int", this);
 			m_id = Type::Index<int>();
+			m_pTypeOps = new TypeDataOps_Internal<int>();
 		}
 
-		virtual JsonValue ToJson(Variant var) override
+		virtual JsonValue ToJson(TypedPtr var) override
 		{
-			return JsonValue((long)var.GetValue<int>());
+			return JsonValue((long)var.CastRef<int>());
 		}
 
-		virtual Variant FromJson(const JsonValue& val) override
+		virtual OwnedTypedPtr FromJson(const JsonValue& val) override
 		{
-			return (int)val.ToInt();
+			return OwnedTypedPtr::New<int>((int)val.ToInt());
 		}
 	};
 	template <>
@@ -258,16 +255,17 @@ namespace An
 		{
 			TypeDatabase::Data::Get().typeNames.emplace("float", this);
 			m_id = Type::Index<float>();
+			m_pTypeOps = new TypeDataOps_Internal<float>();
 		}
 
-		virtual JsonValue ToJson(Variant var) override
+		virtual JsonValue ToJson(TypedPtr var) override
 		{
-			return JsonValue((double)var.GetValue<float>());
+			return JsonValue((double)var.CastRef<float>());
 		}
 
-		virtual Variant FromJson(const JsonValue& val) override
+		virtual OwnedTypedPtr FromJson(const JsonValue& val) override
 		{
-			return (float)val.ToFloat();
+			return OwnedTypedPtr::New<float>((float)val.ToFloat());
 		}
 	};
 	template <>
@@ -289,16 +287,17 @@ namespace An
 		{
 			TypeDatabase::Data::Get().typeNames.emplace("double", this);
 			m_id = Type::Index<double>();
+			m_pTypeOps = new TypeDataOps_Internal<double>();
 		}
 
-		virtual JsonValue ToJson(Variant var) override
+		virtual JsonValue ToJson(TypedPtr var) override
 		{
-			return JsonValue(var.GetValue<double>());
+			return JsonValue(var.CastRef<double>());
 		}
 
-		virtual Variant FromJson(const JsonValue& val) override
+		virtual OwnedTypedPtr FromJson(const JsonValue& val) override
 		{
-			return val.ToFloat();
+			return OwnedTypedPtr::New<double>(val.ToFloat());
 		}
 	};
 	template <>
@@ -320,16 +319,17 @@ namespace An
 		{
 			TypeDatabase::Data::Get().typeNames.emplace("eastl::string", this);
 			m_id = Type::Index<eastl::string>();
+			m_pTypeOps = new TypeDataOps_Internal<eastl::string>();
 		}
 
-		virtual JsonValue ToJson(Variant var) override
-		{
-			return JsonValue(var.GetValue<eastl::string>());
+		virtual JsonValue ToJson(TypedPtr var) override
+		{	
+			return JsonValue(var.CastRef<eastl::string>());
 		}
 
-		virtual Variant FromJson(const JsonValue& val) override
+		virtual OwnedTypedPtr FromJson(const JsonValue& val) override
 		{
-			return val.ToString();
+			return OwnedTypedPtr::New<eastl::string>(val.ToString());
 		}
 	};
 	template <>
@@ -351,16 +351,17 @@ namespace An
 		{
 			TypeDatabase::Data::Get().typeNames.emplace("bool", this);
 			m_id = Type::Index<bool>();
+			m_pTypeOps = new TypeDataOps_Internal<bool>();
 		}
 
-		virtual JsonValue ToJson(Variant var) override
+		virtual JsonValue ToJson(TypedPtr var) override
 		{
-			return JsonValue(var.GetValue<bool>());
+			return JsonValue(var.CastRef<bool>());
 		}
 
-		virtual Variant FromJson(const JsonValue& val) override
+		virtual OwnedTypedPtr FromJson(const JsonValue& val) override
 		{
-			return val.ToBool();
+			return OwnedTypedPtr::New<bool>(val.ToBool());
 		}
 	};
 	template <>
@@ -374,37 +375,6 @@ namespace An
 
 
 
-	// ***********************************************************************
-
-	// struct TypeData_EntityID : TypeData
-	// {
-	// 	TypeData_EntityID() : TypeData{"EntityID", sizeof(EntityID)} 
-	// 	{
-	// 		TypeDatabase::Data::Get().typeNames.emplace("EntityID", this);
-	// 		id = Type::Index<EntityID>();
-	// 	}
-
-	// 	virtual JsonValue ToJson(Variant var) override
-	// 	{
-	// 		JsonValue val = JsonValue::NewObject();
-	// 		val["EntityID"] = JsonValue((long)var.GetValue<EntityID>().Index());
-	// 		return val;
-	// 	}
-
-	// 	virtual Variant FromJson(const JsonValue& val) override
-	// 	{
-	// 		return EntityID::New((int)val.Get("EntityID").ToInt(), 0);
-	// 	}
-	// };
-	// template <>
-	// TypeData& getPrimitiveTypeData<EntityID>()
-	// {
-	// 	static TypeData_EntityID typeData;
-	// 	return typeData;
-	// }
-
-
-
 
 
 	// ***********************************************************************
@@ -415,19 +385,20 @@ namespace An
 		{
 			TypeDatabase::Data::Get().typeNames.emplace("AssetHandle", this);
 			m_id = Type::Index<AssetHandle>();
+			m_pTypeOps = new TypeDataOps_Internal<AssetHandle>();
 		}
 
-		virtual JsonValue ToJson(Variant var) override
+		virtual JsonValue ToJson(TypedPtr var) override
 		{
 			JsonValue val = JsonValue::NewObject();
-			AssetHandle handle = var.GetValue<AssetHandle>();
+			AssetHandle handle = var.CastRef<AssetHandle>();
 			val["Asset"] = AssetDB::GetAssetIdentifier(handle);
 			return val;
 		}
 
-		virtual Variant FromJson(const JsonValue& val) override
+		virtual OwnedTypedPtr FromJson(const JsonValue& val) override
 		{
-			return AssetHandle(val.Get("Asset").ToString());
+			return OwnedTypedPtr::New<AssetHandle>(val.Get("Asset").ToString());
 		}
 	};
 	template <>

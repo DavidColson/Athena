@@ -13,6 +13,8 @@ project "Engine"
         "Source/*.h",
         "Source/Core/**.cpp",
         "Source/Core/**.h",
+        "Source/TypeSystem/**.h",
+        "Source/TypeSystem/**.cpp",
         "Source/AssetDatabase/**.cpp",
         "Source/AssetDatabase/**.h",
     }

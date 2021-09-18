@@ -13,6 +13,7 @@
 #include "Core/Vec3.h"
 #include "Core/Matrix.h"
 #include "Input.h"
+#include "TypeSystem/TypeSystem.h"
 
 #include <SDL.h>
 #include <bgfx/bgfx.h>
@@ -24,10 +25,50 @@
 // This defines a macro called min somehow? We should avoid it at all costs and include it last
 #include <SDL_syswm.h>
 
+struct TestStruct
+{
+	float m_myFloat{ 50.25f };
+	int m_myInt{ 7 };
+	eastl::string m_myString{ "Hello World" };
+
+	REFLECT()
+};
+
+REFLECT_BEGIN(TestStruct)
+REFLECT_MEMBER(m_myFloat)
+REFLECT_MEMBER(m_myInt)
+REFLECT_MEMBER(m_myString)
+REFLECT_END()
+
 void MakeWindow()
 {
 	{
+		using namespace An;
 
+		TypeData_Struct& data = TypeDatabase::GetFromString("TestStruct").AsStruct();
+
+		Log::Debug("Debug %s", data.m_name);
+
+		OwnedTypedPtr myInstance = data.New();
+		Member& mem = data.GetMember("m_myInt");
+		
+		TypedPtr value = mem.Get(myInstance.Ref());
+		int someint = *value.Cast<int>();
+
+		mem.Set(myInstance.Ref(), 12);
+
+
+		eastl::string json = SerializeJsonValue(data.ToJson(myInstance.Ref()));
+
+		Log::Debug("%s", json.c_str());
+
+		TestStruct parsed = data.FromJson(ParseJsonFile(json)).CastRef<TestStruct>();
+
+		Log::Debug("%s", json.c_str());
+
+	}
+	
+	{
 		Vec3f cameraPos(0.0f, 0.0f, 0.0f);
 		Vec3f cameraRot(0.0f, 0.0f, 0.0f);
 

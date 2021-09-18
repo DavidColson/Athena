@@ -5,9 +5,10 @@
 #include <EASTL/string.h>
 #include <EASTL/map.h>
 
-#include "Variant.h"
-#include "Json.h"
-#include "Log.h"
+#include "Core/ErrorHandling.h"
+#include "TypedPtr.h"
+#include "Core/Json.h"
+#include "Core/Log.h"
 
 
 namespace An
@@ -25,22 +26,19 @@ namespace An
 		 * Creates a new instance of this type, returning it as a variant
 		 **/
 
-		// return OwnedTypePtr
-		Variant New();
+		OwnedTypedPtr New();
 		
 		/**
 		 * Turns an instance of this type into a JsonValue structure for serialization to Json
 		 **/
 
-		// param is TypePtr?
-		virtual JsonValue ToJson(Variant var) { return JsonValue(); }
+		virtual JsonValue ToJson(TypedPtr var) { return JsonValue(); }
 
 		/**
 		 * Converts a Json structure into an instance of this type, returned as a variant
 		 **/
 
-		// return OwnedTypePtr
-		virtual Variant FromJson(const JsonValue& val) { return Variant(); }
+		virtual OwnedTypedPtr FromJson(const JsonValue& val) { return OwnedTypedPtr(); }
 
 		/**
 		 * Checks for equality with another TypeData
@@ -93,7 +91,7 @@ namespace An
 	};
 
 
-
+	
 
 	// *************************************
 	// TYPE DATA STRUCT
@@ -105,12 +103,12 @@ namespace An
 		/**
 		 * Turns an instance of this type into a JsonValue structure for serialization to Json
 		 **/
-		virtual JsonValue ToJson(Variant var);
+		virtual JsonValue ToJson(TypedPtr var);
 
 		/**
 		 * Converts a Json structure into an instance of this type, returned as a variant
 		 **/
-		virtual Variant FromJson(const JsonValue& val);
+		virtual OwnedTypedPtr FromJson(const JsonValue& val);
 
 		/**
 		 * Is this type derived somehow from the given type?
@@ -174,98 +172,114 @@ namespace An
 		/**
 		 * String identifier of this member
 		 **/
-		const char* m_name;
+		const char* GetName()
+		{
+			return m_name;
+		}
 
 		/**
 		 * Check to determine if this member is of type T
 		 **/
 		template<typename T>
-		bool IsType();
+		bool IsType()
+		{
+			return *m_pType == TypeDatabase::Get<T>();
+		}
 
 		/**
 		 * Returns the typeData for the type of this member
 		 **/
-		virtual TypeData& GetType() = 0;
+		TypeData& GetType()
+		{
+			return *m_pType;
+		}
 
 		/**
-		 * Get an instance of a member from an instance of it's owning type
-		 * Note that the return value will have copied the value into the variant
+		 * Get a ptr to the value of a member from an instance of it's owning type
 		 **/
-		// return typedPtr, param typedPtr so the return value directly points to the real data in the instance.
-		virtual Variant Get(Variant& instance) = 0;
+		TypedPtr Get(TypedPtr instance)
+		{
+			return TypedPtr((char*)instance.m_pData + m_offset, &GetType());
+		}
 
 		/**
 		 * Set the member of instance to newValue
 		 **/
-		// Takes TypedPtr instance and typedPtr value (it will be copied into it's new location I think, could be const param then?)
-		virtual void Set(Variant& instance, Variant newValue) = 0;
-
-		// TODO: Don't love what's happening here, seems like it's prone to error. Think of something else
-		// These should not be necessary when TypedPtrs are working
-
-		/**
-		 * Get an instance of a member from a pointer to a base class of it's owning type
-		 * Note that the return value will have copied the value into the variant
-		 **/
-		virtual Variant GetFromBase(void* pInstance) = 0;
+		void Set(TypedPtr instance, TypedPtr newValue)
+		{
+			ASSERT(*newValue.m_pType == *m_pType, "Trying to set incorrect value type on some member");
+			void* ptr = (char*)instance.m_pData + m_offset;
+			memcpy(ptr, newValue.m_pData, m_pType->m_size);
+		}
 
 		/**
-		 * Set the member of base class instance to newValue
+		 * Set the member of instance to newValue
 		 **/
-		virtual void SetOnBase(void* pInstance, Variant value) = 0;
+		template <typename T>
+		void Set(TypedPtr instance, T newValue)
+		{
+			ASSERT(TypeDatabase::Get<T>() == *m_pType, "Trying to set incorrect value type on some member");
+			void* ptr = (char*)instance.m_pData + m_offset;
+			memcpy(ptr, &newValue, sizeof(T));
+		}
 		
 		/**
 		 *	Constructor, for internal use in REFLEC_* macros, do not use elsewhere
 		**/
-		Member(const char* name) : m_name(name) {}
+		Member(const char* name, size_t offset, TypeData& type) : m_name(name), m_offset(offset), m_pType(&type) {}
+
+	protected:
+		const char* m_name;
+		size_t m_offset;
+		TypeData* m_pType;
 	};
 
 	/**
 	 * Used to define a type as reflectable struct during type declaration 
 	 **/
 	#define REFLECT()                               \
-		static TypeData_Struct staticTypeData;                \
-		static void initReflection(TypeData_Struct* type); \
-		TypeData_Struct& GetTypeData();
+		static An::TypeData_Struct staticTypeData;                \
+		static void initReflection(An::TypeData_Struct* type); \
+		An::TypeData_Struct& GetTypeData();
 
 	/**
 	 * Used to define a type as reflectable struct during type declaration 
 	 **/
 	#define REFLECT_DERIVED()                               \
-		static TypeData_Struct staticTypeData;                \
-		static void initReflection(TypeData_Struct* type); \
-		virtual TypeData_Struct& GetTypeData();
+		static An::TypeData_Struct staticTypeData;                \
+		static void initReflection(An::TypeData_Struct* type); \
+		virtual An::TypeData_Struct& GetTypeData();
 
 	/**
 	 * Used to specify the structure of a type, use in cpp files
 	 **/
 	#define REFLECT_BEGIN(ReflectedStruct)\
-		TypeData_Struct ReflectedStruct::staticTypeData{ReflectedStruct::initReflection};\
-		TypeData_Struct& ReflectedStruct::GetTypeData() { return ReflectedStruct::staticTypeData; }\
-		void ReflectedStruct::initReflection(TypeData_Struct* selfTypeData) {\
+		An::TypeData_Struct ReflectedStruct::staticTypeData{ReflectedStruct::initReflection};\
+		An::TypeData_Struct& ReflectedStruct::GetTypeData() { return ReflectedStruct::staticTypeData; }\
+		void ReflectedStruct::initReflection(An::TypeData_Struct* selfTypeData) {\
 			using XX = ReflectedStruct;\
-			TypeDatabase::Data::Get().typeNames.emplace(#ReflectedStruct, selfTypeData);\
-			selfTypeData->id = Type::Index<XX>();\
-			selfTypeData->name = #ReflectedStruct;\
-			selfTypeData->size = sizeof(XX);\
-			selfTypeData->m_pTypeOps = new TypeDataOps_Internal<XX>;\
-			selfTypeData->m_castableTo = TypeData::Struct;\
+			An::TypeDatabase::Data::Get().typeNames.emplace(#ReflectedStruct, selfTypeData);\
+			selfTypeData->m_id = An::Type::Index<XX>();\
+			selfTypeData->m_name = #ReflectedStruct;\
+			selfTypeData->m_size = sizeof(XX);\
+			selfTypeData->m_pTypeOps = new An::TypeDataOps_Internal<XX>;\
+			selfTypeData->m_castableTo = An::TypeData::Struct;\
 			selfTypeData->m_members = {
 
 	/**
 	 * Used to specify the structure of a type for derived types, again used in cpp files
 	 **/
 	#define REFLECT_BEGIN_DERIVED(ReflectedStruct, ParentStruct)\
-		TypeData_Struct ReflectedStruct::staticTypeData{ReflectedStruct::initReflection};\
-		TypeData_Struct& ReflectedStruct::GetTypeData() { return ReflectedStruct::staticTypeData; }\
-		void ReflectedStruct::initReflection(TypeData_Struct* selfTypeData) {\
+		An::TypeData_Struct ReflectedStruct::staticTypeData{ReflectedStruct::initReflection};\
+		An::TypeData_Struct& ReflectedStruct::GetTypeData() { return ReflectedStruct::staticTypeData; }\
+		void ReflectedStruct::initReflection(An::TypeData_Struct* selfTypeData) {\
 			using XX = ReflectedStruct;\
-			TypeDatabase::Data::Get().typeNames.emplace(#ReflectedStruct, selfTypeData);\
-			selfTypeData->id = Type::Index<XX>();\
-			selfTypeData->name = #ReflectedStruct;\
-			selfTypeData->size = sizeof(XX);\
-			selfTypeData->m_pTypeOps = new TypeDataOps_Internal<XX>;\
-			selfTypeData->m_castableTo = TypeData::Struct;\
+			An::TypeDatabase::Data::Get().typeNames.emplace(#ReflectedStruct, selfTypeData);\
+			selfTypeData->m_id = An::Type::Index<XX>();\
+			selfTypeData->m_name = #ReflectedStruct;\
+			selfTypeData->m_size = sizeof(XX);\
+			selfTypeData->m_pTypeOps = new An::TypeDataOps_Internal<XX>;\
+			selfTypeData->m_castableTo = An::TypeData::Struct;\
 			selfTypeData->m_pParentType = &ParentStruct::staticTypeData;\
 			selfTypeData->m_members = {
 
@@ -273,14 +287,14 @@ namespace An
 	 * Used to specify a member inside a REFLECT_BEGIN/END pair
 	 **/
 	#define REFLECT_MEMBER(member)\
-				{offsetof(XX, member), new Member_Internal<decltype(XX::member), XX>(#member, &XX::member)},
+				{offsetof(XX, member), new An::Member(#member, offsetof(XX, member), An::TypeDatabase::Get<decltype(XX::member)>())},
 
 	/**
 	 * Complete a type structure definition
 	 **/
 	#define REFLECT_END()\
 			};\
-			for (const eastl::pair<size_t, Member*>& mem : selfTypeData->m_members) { selfTypeData->m_memberOffsets[mem.second->name] = mem.first; }\
+			for (const eastl::pair<size_t, An::Member*>& mem : selfTypeData->m_members) { selfTypeData->m_memberOffsets[mem.second->GetName()] = mem.first; }\
 		}
 
 
@@ -338,12 +352,12 @@ namespace An
 		/**
 		 * Turns an instance of this type into a JsonValue structure for serialization to Json
 		 **/
-		virtual JsonValue ToJson(Variant var);
+		virtual JsonValue ToJson(TypedPtr var);
 
 		/**
 		 * Converts a Json structure into an instance of this type, returned as a variant
 		 **/
-		virtual Variant FromJson(const JsonValue& val);
+		virtual OwnedTypedPtr FromJson(const JsonValue& val);
 
 		eastl::vector<Enumerator> categories;
 		
@@ -523,53 +537,11 @@ namespace An
 		}
 	};
 
-	template<typename T>
-	bool Member::IsType()
-	{
-		// This returns true if you ask if the item is an unknown type, which is real bad
-		return GetType() == TypeDatabase::Get<T>(); 
-	}
-
-	template<typename MemberType, typename ClassType>
-	struct Member_Internal : public Member
-	{
-		Member_Internal(const char* _name, MemberType ClassType::*pointer) : Member(_name), memberPointer(pointer) {}
-
-		virtual TypeData& GetType() override
-		{
-			return TypeDatabase::Get<MemberType>();
-		}
-
-		virtual Variant Get(Variant& instance) override
-		{
-			return Variant(instance.GetValue<ClassType>().*memberPointer);
-		}
-
-		virtual Variant GetFromBase(void* pInstance) override
-		{
-			return Variant(static_cast<ClassType*>(pInstance)->*memberPointer);
-		}
-
-		// Copy happening on value, consider replacing with argument wrapper
-		virtual void Set(Variant& instance, Variant value) override
-		{
-			instance.GetValue<ClassType>().*memberPointer = value.GetValue<MemberType>();
-		}
-
-		// Copy happening on value, consider replacing with argument wrapper
-		virtual void SetOnBase(void* pInstance, Variant value) override
-		{
-			static_cast<ClassType*>(pInstance)->*memberPointer = value.GetValue<MemberType>();
-		}
-
-		MemberType ClassType::* memberPointer;
-	};
-
 	struct TypeDataOps
 	{
-		virtual Variant New() = 0;
-		virtual Variant CopyToVariant(void* pObject) = 0;
+		virtual OwnedTypedPtr New() = 0;
 		virtual void Copy(void* destination, void* pObject) = 0;
+		virtual void Move(void* destination, void* pObject) = 0;
 		virtual void PlacementNew(void* location) = 0;
 		virtual void Destruct(void* pObject) = 0;
 		virtual void Free(void* pObject) = 0;
@@ -578,21 +550,22 @@ namespace An
 	template<typename T>
 	struct TypeDataOps_Internal : public TypeDataOps
 	{
-		virtual Variant New() override
+		virtual OwnedTypedPtr New() override
 		{
-			// Return OwnedTypePtr
-			return Variant(T());
-		}
-
-		virtual Variant CopyToVariant(void* pObject) override
-		{
-			// Return OwnedTypePtr
-			return Variant(*reinterpret_cast<T*>(pObject));
+			OwnedTypedPtr ptr;
+			ptr.m_pData = new T();
+			ptr.m_pType = &TypeDatabase::Get<T>();
+			return eastl::move(ptr);
 		}
 
 		virtual void Copy(void* destination, void* pObject) override
 		{
 			*reinterpret_cast<T*>(destination) = *reinterpret_cast<T*>(pObject);
+		}
+
+		virtual void Move(void* destination, void* pObject) override
+		{
+			*reinterpret_cast<T*>(destination) = eastl::move(*reinterpret_cast<T*>(pObject));
 		}
 
 		virtual void PlacementNew(void* location) override
@@ -612,6 +585,8 @@ namespace An
 		}
 	};
 
+	// ***********************************************************************
+
 	template<typename Type>
 	bool TypeData_Struct::IsDerivedFrom()
 	{
@@ -627,5 +602,60 @@ namespace An
 			pParent = pParent->AsStruct().m_pParentType;
 		}
 		return false;
+	}
+
+
+	// TypedPtr templated implementation functions (here because of include hell)
+
+	// ***********************************************************************
+
+	template <typename T>
+	T* TypedPtr::Cast()
+	{
+		ASSERT(*m_pType == TypeDatabase::Get<T>(), "Attempting to cast to wrong type");
+		return static_cast<T*>(m_pData);
+	}
+
+	// ***********************************************************************
+
+	template <typename T>
+	T* TypedPtr::SafeCast()
+	{
+		return (m_pType == TypeDatabase::Get<T>()) ? static_cast<T*>(m_pData) : nullptr;
+	}
+
+	// ***********************************************************************
+
+	template <typename T>
+	T& TypedPtr::CastRef()
+	{
+		ASSERT(*m_pType == TypeDatabase::Get<T>(), "Attempting to cast to wrong type");
+		return *static_cast<T*>(m_pData);
+	}
+
+	// ***********************************************************************
+
+	template <typename T>
+	T* OwnedTypedPtr::Cast()
+	{
+		ASSERT(*m_pType == TypeDatabase::Get<T>(), "Attempting to cast to wrong type");
+		return static_cast<T*>(m_pData);
+	}
+
+	// ***********************************************************************
+
+	template <typename T>
+	T* OwnedTypedPtr::SafeCast()
+	{
+		return (m_pType == TypeDatabase::Get<T>()) ? static_cast<T*>(m_pData) : nullptr;
+	}
+
+	// ***********************************************************************
+
+	template <typename T>
+	T& OwnedTypedPtr::CastRef()
+	{
+		ASSERT(*m_pType == TypeDatabase::Get<T>(), "Attempting to cast to wrong type");
+		return *static_cast<T*>(m_pData);
 	}
 }
