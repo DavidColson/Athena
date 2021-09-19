@@ -20,7 +20,7 @@ namespace An
         bimg::imageFree(pContainer);
     }
 
-    void Image::Load(Path path, AssetHandle handleForThis)
+    Image::Image(Path path)
     {
         eastl::string file = FileSys::ReadWholeFile(path);
 

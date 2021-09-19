@@ -14,8 +14,12 @@ project "Game"
 	{
 		"../Engine/Source",
 		"../Engine/Lib/SDL2-2.0.8/include",
-        "../Engine/ThirdParty/EABase/include",
-        "../Engine/ThirdParty/EASTL/include",
+		"../Engine/Source/ThirdParty/EABase/include/Common",
+		"../Engine/Source/ThirdParty/EASTL/include",
+		"../Engine/Source/ThirdParty/bgfx/include",
+        "../Engine/Source/ThirdParty/bimg/include",
+        "../Engine/Source/ThirdParty/bx/include",
+        "../Engine/Source/ThirdParty/bgfx/tools",
         "Source/"
 	}
     links 

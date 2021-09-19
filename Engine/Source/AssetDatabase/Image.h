@@ -2,16 +2,17 @@
 
 #pragma once
 
-#include "AssetDatabase.h"
+#include "Core/Path.h"
 
 #include <bgfx/bgfx.h>
 
+
 namespace An
 {
-    struct Image : Asset
+    struct Image
     {
-        virtual void Load(Path path, AssetHandle handleForThis) override;
-
+        Image() {}
+        Image(Path path);
         ~Image();
 
         int m_width;

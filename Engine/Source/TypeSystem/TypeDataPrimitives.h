@@ -89,12 +89,4 @@ namespace An
 	TypeData& getPrimitiveTypeData<eastl::string>();
 	template <>
 	TypeData& getPrimitiveTypeData<bool>();
-
-	// Ideally game code systems can define primitive data without it being down here?
-	struct EntityID;
-	template <>
-	TypeData& getPrimitiveTypeData<EntityID>();
-	struct AssetHandle;
-	template <>
-	TypeData& getPrimitiveTypeData<AssetHandle>();
 }

@@ -2,13 +2,13 @@
 
 #pragma once
 
-#include "AssetDatabase.h"
+#include "Core/Path.h"
 
 #include <bgfx/bgfx.h>
 
 namespace An
 {
-    struct Shader : Asset
+    struct Shader
     {
         enum Type
         {
@@ -16,10 +16,11 @@ namespace An
             Vertex
         };
 
-        Shader();
-        virtual void Load(Path path, AssetHandle handleForThis) override;
-        virtual void Reload(Path path, AssetHandle handleForThis) override;
-        virtual ~Shader() override;
+        Shader() {}
+        Shader(Path path);
+        ~Shader();
+        
+        void Reload(Path path);
 
         Type m_type;
 

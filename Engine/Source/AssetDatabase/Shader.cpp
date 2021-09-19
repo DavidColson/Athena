@@ -10,14 +10,7 @@ namespace An
 {
 	// ***********************************************************************
 
-    Shader::Shader()
-    {
-        bOverrideReload = true;
-    }
-
-	// ***********************************************************************
-
-    void Shader::Load(Path path, AssetHandle handleForThis)
+    Shader::Shader(Path path)
     {
         const eastl::string extension = path.Extension().AsString();
 
@@ -45,7 +38,7 @@ namespace An
 
 	// ***********************************************************************
 
-    void Shader::Reload(Path path, AssetHandle handleForThis)
+    void Shader::Reload(Path path)
     {
         const bgfx::Memory* pNewShaderMem = nullptr;
         switch (m_type)

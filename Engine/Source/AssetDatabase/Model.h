@@ -1,19 +1,43 @@
-// Copyright 2020-2021 David Colson. All rights reserved.
-
 #pragma once
 
-#include "AssetDatabase.h"
+#include "Core/Vec3.h"
+#include "Core/Vec4.h"
+#include "Core/Vec2.h"
+#include "Core/Quat.h"
+#include "Core/AABB.h"
+#include "Core/Path.h"
 #include "Mesh.h"
+
+#include <bgfx/bgfx.h>
+#include <EASTL/vector.h>
 
 namespace An
 {
-    struct Model : Asset
+    struct Node
     {
-        // TODO: Solution here is to store just the vector of asset handles so ref counting works.
-        // Rule is to NEVER store assets directly. Provide an "AllocateAsset" function in assetdb, and it owns all data to assets, so this mesh list moves to there, and we simply store the handle
-        eastl::vector<Mesh> meshes;
+        eastl::string m_name;
+        
+        Node* m_pParent{ nullptr };
+        eastl::vector<Node*> m_children;
 
-        virtual void Load(Path path, AssetHandle handleForThis) override;
-        ~Model() {}
+        uint32_t m_meshId;
+
+        Vec3f m_translation;
+        Vec3f m_scale;
+        Quatf m_rotation;
+        
+        Matrixf m_worldTransform;
+    };
+
+    struct Scene
+    {
+        Scene() {}
+        Scene(Path path);
+
+        Quatf m_cameraRotation;
+        Vec3f m_cameraTranslation;
+
+        eastl::vector<Mesh> m_meshes;
+        eastl::vector<Node> m_nodes;
     };
 }

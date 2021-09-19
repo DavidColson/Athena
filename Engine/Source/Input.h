@@ -3,7 +3,6 @@
 #include <EASTL/bitset.h>
 #include <Core/Vec2.h>
 
-struct Scene;
 union SDL_Event;
 
 namespace Input

@@ -393,25 +393,25 @@ struct Matrix
 	inline static Matrix MakeTQS(Vec3<T> translation, Quat<T> orientation, Vec3<T> scale)
 	{
 		Matrix res;
-		mat.m[0][0] = (1.0f - 2.0f*rot.y*rot.y - 2.0f*rot.z*rot.z) * scale.x;
-		mat.m[0][1] = (2.0f*rot.x*rot.y + 2.0f*rot.z*rot.w) * scale.x;
-		mat.m[0][2] = (2.0f*rot.x*rot.z - 2.0f*rot.y*rot.w) * scale.x;
-        mat.m[0][3] = 0.0f;
+		res.m[0][0] = (1.0f - 2.0f*orientation.y*orientation.y - 2.0f*orientation.z*orientation.z) * scale.x;
+		res.m[0][1] = (2.0f*orientation.x*orientation.y + 2.0f*orientation.z*orientation.w) * scale.x;
+		res.m[0][2] = (2.0f*orientation.x*orientation.z - 2.0f*orientation.y*orientation.w) * scale.x;
+        res.m[0][3] = 0.0f;
 		
-        mat.m[1][0] = (2.0f*rot.x*rot.y - 2.0f*rot.z*rot.w) * scale.y;
-        mat.m[1][1] = (1.0f - 2.0f*rot.x*rot.x - 2.0f*rot.z*rot.z) * scale.y;
-        mat.m[1][2] = (2.0f*rot.y*rot.z + 2.0f*rot.x*rot.w) * scale.y;
-        mat.m[1][3] = 0.0f;
+        res.m[1][0] = (2.0f*orientation.x*orientation.y - 2.0f*orientation.z*orientation.w) * scale.y;
+        res.m[1][1] = (1.0f - 2.0f*orientation.x*orientation.x - 2.0f*orientation.z*orientation.z) * scale.y;
+        res.m[1][2] = (2.0f*orientation.y*orientation.z + 2.0f*orientation.x*orientation.w) * scale.y;
+        res.m[1][3] = 0.0f;
 
-        mat.m[2][0] = (2.0f*rot.x*rot.z + 2.0f*rot.y*rot.w) * scale.z;
-        mat.m[2][1] = (2.0f*rot.y*rot.z - 2.0f*rot.x*rot.w) * scale.z;
-        mat.m[2][2] = (1.0f - 2.0f*rot.x*rot.x - 2.0f*rot.y*rot.y) * scale.z;
-        mat.m[2][3] = 0.0f;
+        res.m[2][0] = (2.0f*orientation.x*orientation.z + 2.0f*orientation.y*orientation.w) * scale.z;
+        res.m[2][1] = (2.0f*orientation.y*orientation.z - 2.0f*orientation.x*orientation.w) * scale.z;
+        res.m[2][2] = (1.0f - 2.0f*orientation.x*orientation.x - 2.0f*orientation.y*orientation.y) * scale.z;
+        res.m[2][3] = 0.0f;
 
-        mat.m[3][0] = translation.x;
-        mat.m[3][1] = translation.y;
-        mat.m[3][2] = translation.z;
-        mat.m[3][3] = 1.0f;		                
+        res.m[3][0] = translation.x;
+        res.m[3][1] = translation.y;
+        res.m[3][2] = translation.z;
+        res.m[3][3] = 1.0f;		                
 		return res;
 	}
 

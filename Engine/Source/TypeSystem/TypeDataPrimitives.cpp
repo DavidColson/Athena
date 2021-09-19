@@ -2,7 +2,6 @@
 
 #include "TypeDataPrimitives.h"
 
-#include "AssetDatabase/AssetDatabase.h"
 #include "Core/Log.h"
 #include <EASTL/string.h>
 #include "TypeDatabase.h"
@@ -200,39 +199,4 @@ namespace An
 		return typeData;
 	}
 
-
-
-
-
-
-	// ***********************************************************************
-
-	struct TypeData_AssetHandle: TypeData
-	{
-		TypeData_AssetHandle() : TypeData{"AssetHandle", sizeof(AssetHandle)} 
-		{
-			TypeDatabase::Data::Get().typeNames.emplace("AssetHandle", this);
-			m_id = Type::Index<AssetHandle>();
-			m_pTypeOps = new TypeDataOps_Internal<AssetHandle>();
-		}
-
-		virtual JsonValue ToJson(TypedPtr var) override
-		{
-			JsonValue val = JsonValue::NewObject();
-			AssetHandle handle = var.CastRef<AssetHandle>();
-			val["Asset"] = AssetDB::GetAssetIdentifier(handle);
-			return val;
-		}
-
-		virtual OwnedTypedPtr FromJson(const JsonValue& val) override
-		{
-			return OwnedTypedPtr::New<AssetHandle>(val.Get("Asset").ToString());
-		}
-	};
-	template <>
-	TypeData& getPrimitiveTypeData<AssetHandle>()
-	{
-		static TypeData_AssetHandle typeData;
-		return typeData;
-	}
 }

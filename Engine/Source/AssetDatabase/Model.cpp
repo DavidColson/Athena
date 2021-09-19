@@ -1,15 +1,9 @@
-// Copyright 2020-2021 David Colson. All rights reserved.
-
 #include "Model.h"
 
 #include "Core/Json.h"
-#include "Core/Log.h"
 #include "Core/Base64.h"
-#include "Core/Vec3.h"
-#include "AssetDatabase.h"
-#include "Core/FileSystem.h"
 
-#include <SDL.h>
+#include <SDL_rwops.h>
 
 namespace An
 {
@@ -64,20 +58,88 @@ namespace An
         Type type;
     };
 
-    void Model::Load(Path path, AssetHandle handleForThis)
+    void ParseNodesRecursively(Node* pParent, eastl::vector<Node>& outNodes, JsonValue& nodeToParse, JsonValue& nodesData)
     {
-        // Load file
-        eastl::string file = FileSys::ReadWholeFile(path);
+        for (int i = 0; i < nodeToParse.Count(); i++)
+        {
+            int nodeId = nodeToParse[i].ToInt();
+            JsonValue& jsonNode = nodesData[nodeId];
 
-        // Parse json
+            // extract the nodes
+            outNodes.emplace_back();
+            Node& node = outNodes.back();
+
+            node.m_name = jsonNode.HasKey("name") ? jsonNode["name"].ToString() : "";
+            node.m_meshId = UINT32_MAX;
+
+            if (jsonNode.HasKey("children"))
+            {
+                ParseNodesRecursively(&node, outNodes, jsonNode["children"], nodesData);
+            }
+
+            if (pParent)
+            {
+                pParent->m_children.push_back(&outNodes.back());
+                outNodes.back().m_pParent = pParent;
+            }
+
+            if (jsonNode.HasKey("mesh"))
+            {
+                node.m_meshId = jsonNode["mesh"].ToInt();
+            }
+
+            if (jsonNode.HasKey("rotation"))
+            {
+                node.m_rotation.x = float(jsonNode["rotation"][0].ToFloat());
+                node.m_rotation.y = float(jsonNode["rotation"][1].ToFloat());
+                node.m_rotation.z = float(jsonNode["rotation"][2].ToFloat());
+                node.m_rotation.w = float(jsonNode["rotation"][3].ToFloat());
+            }
+            else
+            {
+                node.m_rotation = Quatf::Identity();
+            }
+
+            if (jsonNode.HasKey("translation"))
+            {
+                node.m_translation.x = float(jsonNode["translation"][0].ToFloat());
+                node.m_translation.y = float(jsonNode["translation"][1].ToFloat());
+                node.m_translation.z = float(jsonNode["translation"][2].ToFloat());
+            }
+            else
+            {
+                node.m_translation = Vec3f(0.0f);
+            }
+
+            if (jsonNode.HasKey("scale"))
+            {
+                node.m_scale.x = float(jsonNode["scale"][0].ToFloat());
+                node.m_scale.y = float(jsonNode["scale"][1].ToFloat());
+                node.m_scale.z = float(jsonNode["scale"][2].ToFloat());
+            }
+            else
+            {
+                node.m_scale = Vec3f(1.0f);
+            }
+        } 
+    }
+
+    Scene::Scene(Path path)
+    {
+        SDL_RWops* pFileRead = SDL_RWFromFile(path.AsRawString(), "rb");
+
+        uint64_t size = SDL_RWsize(pFileRead);
+        char* pData = new char[size];
+        SDL_RWread(pFileRead, pData, size, 1);
+        SDL_RWclose(pFileRead);
+
+        eastl::string file(pData, pData + size);
+
         JsonValue parsed = ParseJsonFile(file);
 
-        // Check for asset label
         bool validGltf = parsed["asset"]["version"].ToString() == "2.0";
         if (!validGltf)
-        {
-            Log::Crit("Failed to load Gltf file, invalid contents: %s", path);
-        }
+            return;
 
         eastl::vector<Buffer> rawDataBuffers;
         JsonValue& jsonBuffers = parsed["buffers"];
@@ -152,16 +214,14 @@ namespace An
             accessors.push_back(acc);
         }
         
-        // This is icky. AssetDB stores subasset ptrs, so we cannot resize the array or it'll move the subassets. 
-        // Maybe better to let asset DB hold the memory for them?
-        meshes.reserve(parsed["meshes"].Count());
+        m_nodes.reserve(parsed["nodes"].Count());
+        ParseNodesRecursively(nullptr, m_nodes, parsed["scenes"][0]["nodes"], parsed["nodes"]);
 
+        m_meshes.reserve(parsed["meshes"].Count());
         for (int i = 0; i < parsed["meshes"].Count(); i++)
         {
-            if (i == 13)
-                Log::Debug("Hello");
-
             JsonValue& jsonMesh = parsed["meshes"][i];
+
             Mesh mesh;
             mesh.m_name = jsonMesh.HasKey("name") ? jsonMesh["name"].ToString() : "";
 
@@ -172,15 +232,9 @@ namespace An
 
                 if (jsonPrimitive.HasKey("mode"))
                 {
-                    switch (jsonPrimitive["mode"].ToInt())
+                    if (jsonPrimitive["mode"].ToInt() != 4)
                     {
-                    case 0: prim.m_topologyType = Primitive::TopologyType::PointList; break;
-                    case 1: prim.m_topologyType = Primitive::TopologyType::LineList; break;
-                    case 3: prim.m_topologyType = Primitive::TopologyType::LineStrip; break;
-                    case 4: prim.m_topologyType = Primitive::TopologyType::TriangleList; break;
-                    case 5: prim.m_topologyType = Primitive::TopologyType::TriangleStrip; break;
-                    default: Log::Crit("Unsupported topology type given in file %s", path);
-                        break;
+                        return; // Unsupported topology type
                     }
                 }
 
@@ -189,13 +243,13 @@ namespace An
                 JsonValue& jsonAttr = jsonPrimitive["attributes"];
                 Vec3f* vertPositionBuffer = (Vec3f*)accessors[jsonAttr["POSITION"].ToInt()].pBuffer;
                 prim.m_vertices = eastl::vector<Vec3f>(vertPositionBuffer, vertPositionBuffer + nVerts);
-                
+
                 Vec3f* vertNormBuffer = jsonAttr.HasKey("NORMAL") ? (Vec3f*)accessors[jsonAttr["NORMAL"].ToInt()].pBuffer : nullptr;
                 prim.m_normals = eastl::vector<Vec3f>(vertNormBuffer, vertNormBuffer + nVerts);
 
                 Vec2f* vertTexCoordBuffer = jsonAttr.HasKey("TEXCOORD_0") ? (Vec2f*)accessors[jsonAttr["TEXCOORD_0"].ToInt()].pBuffer : nullptr;
                 prim.m_uv0 = eastl::vector<Vec2f>(vertTexCoordBuffer, vertTexCoordBuffer + nVerts);
-
+                
                 if (jsonAttr.HasKey("COLOR_0"))
                 {
                     Vec4f* vertColBuffer = (Vec4f*)accessors[jsonAttr["COLOR_0"].ToInt()].pBuffer;
@@ -207,18 +261,12 @@ namespace An
                 prim.m_indices = eastl::vector<uint16_t>(indexBuffer, indexBuffer + nIndices);
 
                 prim.RecalcLocalBounds();
+                prim.CreateBuffers();
                 mesh.m_primitives.push_back(eastl::move(prim));
             }
-            meshes.push_back(eastl::move(mesh));
-
-            // We'll manually register the mesh asset, since we created it rather than the asset database
-            eastl::string meshAssetIdentifier = AssetDB::GetAssetIdentifier(handleForThis);
-            meshAssetIdentifier.append_sprintf(":mesh_%i", i);
-            meshes.back().Load(meshAssetIdentifier, AssetHandle(meshAssetIdentifier));
-
-            AssetDB::RegisterSubasset(&(meshes.back()), AssetHandle(handleForThis), AssetHandle(meshAssetIdentifier));
+            m_meshes.push_back(eastl::move(mesh));
         }
-
+        
         for (int i = 0; i < rawDataBuffers.size(); i++)
         {
             delete rawDataBuffers[i].pBytes;

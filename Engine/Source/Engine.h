@@ -2,4 +2,12 @@
 
 #pragma once
 
-void MakeWindow();
+namespace An
+{
+    void InitWindow(int width, int height);
+    bool ShouldWindowClose();
+    void CloseWindow();
+
+    float StartFrame();
+    void EndFrame();
+}

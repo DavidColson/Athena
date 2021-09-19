@@ -73,7 +73,24 @@
 			"string": "cpp",
 			"typeinfo": "cpp",
 			"codecvt": "cpp",
-			"xthread": "cpp"
+			"xthread": "cpp",
+			"atomic": "cpp",
+			"cctype": "cpp",
+			"condition_variable": "cpp",
+			"cstdarg": "cpp",
+			"cstdint": "cpp",
+			"cstdio": "cpp",
+			"cstdlib": "cpp",
+			"cstring": "cpp",
+			"ctime": "cpp",
+			"cwchar": "cpp",
+			"exception": "cpp",
+			"resumable": "cpp",
+			"ios": "cpp",
+			"iosfwd": "cpp",
+			"iostream": "cpp",
+			"stdexcept": "cpp",
+			"xfacet": "cpp"
 		}
 	}
 }

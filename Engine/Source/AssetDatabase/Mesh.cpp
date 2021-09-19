@@ -2,36 +2,14 @@
 
 #include "Mesh.h"
 
-#include "AssetDatabase.h"
-
 namespace An
 {
-    bgfx::VertexLayout Primitive::s_vertLayout;
+     bgfx::VertexLayout Primitive::s_vertLayout;
     bgfx::VertexLayout Primitive::s_uv0Layout;
     bgfx::VertexLayout Primitive::s_normLayout;
     bgfx::VertexLayout Primitive::s_colLayout;
 
-	// ***********************************************************************
-
-    void Mesh::Load(Path path, AssetHandle handleForThis)
-    {
-        // Doesn't actually load anything from disk since this would be a subasset of a model
-        // If (AssetDB::IsSubasset(handle))
-        // bla bla
-        CreateBuffers();
-    }
-
-	// ***********************************************************************
-
-    void Mesh::CreateBuffers()
-    {
-        for(Primitive& prim : m_primitives)
-        {
-            prim.CreateBuffers();
-        }
-    }
-
-	// ***********************************************************************
+    // ***********************************************************************
 
     Primitive::Primitive(const Primitive& copy)
     {
@@ -240,92 +218,5 @@ namespace An
 	        uint32_t size = uint32_t(sizeof(uint16_t) * m_indices.size());
             m_indexBuffer = bgfx::createIndexBuffer(bgfx::makeRef(m_indices.data(), size));
         }
-    }
-
-	// ***********************************************************************
-
-    Primitive Primitive::NewPlainTriangle()
-    {
-        Primitive prim;
-        prim.m_vertices = {
-            Vec3f(-1.0f, -1.0f, 0.0f),
-            Vec3f(1.f, -1.f, 0.0f),
-            Vec3f(0.f, 1.f, 0.0f)
-        };
-        prim.m_colors = {
-            Vec4f(1.0f, 1.0f, 1.0f, 1.0f),
-            Vec4f(1.0f, 1.0f, 1.0f, 1.0f),
-            Vec4f(1.0f, 1.0f, 1.0f, 1.0f)
-        };
-        prim.m_indices = {0, 1, 2};
-
-        prim.m_topologyType = TopologyType::TriangleList;
-        prim.RecalcLocalBounds();
-        prim.CreateBuffers();
-        return prim;
-    }
-
-	// ***********************************************************************
-
-    Primitive Primitive::NewPlainQuad()
-    {
-        Primitive prim;
-        prim.m_vertices = {
-            Vec3f(-1.0f, -1.0f, 0.0f),
-            Vec3f(1.f, -1.f, 0.0f),
-            Vec3f(-1.f, 1.f, 0.0f),
-            Vec3f(1.f, 1.f, 0.0f)
-        };
-        prim.m_colors = {
-            Vec4f(1.0f, 1.0f, 1.0f, 1.0f),
-            Vec4f(1.0f, 1.0f, 1.0f, 1.0f),
-            Vec4f(1.0f, 1.0f, 1.0f, 1.0f),
-            Vec4f(1.0f, 1.0f, 1.0f, 1.0f)
-        };
-        prim.m_indices = {0, 1, 2, 3};
-
-        prim.m_topologyType = TopologyType::TriangleStrip;
-        prim.RecalcLocalBounds();
-        prim.CreateBuffers();
-        return prim;
-    }
-
-	// ***********************************************************************
-
-    Primitive Primitive::NewCube()
-    {
-        Primitive prim;
-        prim.m_vertices = {
-            Vec3f(-1.0f, -1.0f,  1.0f), // Front bottom left
-            Vec3f( 1.0f, -1.0f,  1.0f), // Front bottom right
-            Vec3f(-1.0f,  1.0f,  1.0f), // Front top left
-            Vec3f( 1.0f,  1.0f,  1.0f), // Front top right
-
-            Vec3f(-1.0f, -1.0f, -1.0f), // Back bottom left
-            Vec3f( 1.0f, -1.0f, -1.0f), // Back bottom right
-            Vec3f(-1.0f,  1.0f, -1.0f), // Back top left
-            Vec3f( 1.0f,  1.0f, -1.0f) // Back top right
-        };
-        prim.m_normals = {
-            Vec3f(), Vec3f(), Vec3f(), Vec3f(), Vec3f(), Vec3f(), Vec3f(), Vec3f()
-        };
-        prim.m_colors = {
-            Vec4f(1.0f, 0.0f, 0.0f, 1.0f),
-            Vec4f(0.0f, 1.0f, 0.0f, 1.0f),
-            Vec4f(1.0f, 0.0f, 1.0f, 1.0f),
-            Vec4f(1.0f, 1.0f, 1.0f, 1.0f),
-
-            Vec4f(1.0f, 0.0f, 0.0f, 1.0f),
-            Vec4f(0.0f, 1.0f, 0.0f, 1.0f),
-            Vec4f(1.0f, 0.0f, 1.0f, 1.0f),
-            Vec4f(1.0f, 1.0f, 1.0f, 1.0f)
-        };
-        prim.m_indices = {
-            0, 1, 2, 3, 7, 1, 5, 4, 7, 6, 2, 4, 0, 1
-        };
-        prim.m_topologyType = TopologyType::TriangleStrip;
-        prim.RecalcLocalBounds();
-        prim.CreateBuffers();
-        return prim;
     }
 }
