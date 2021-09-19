@@ -40,6 +40,9 @@ namespace An
         TopologyType m_topologyType{TopologyType::TriangleList};
         AABBf m_localBounds;
 
+        Vec4f m_baseColor{ Vec4f(1.0f) };
+        uint32_t m_baseColorTexture{ UINT32_MAX };
+
         eastl::vector<Vec3f> m_vertices;
         eastl::vector<Vec2f> m_uv0;
         eastl::vector<Vec3f> m_normals;
@@ -60,7 +63,6 @@ namespace An
     struct Mesh
     {
         eastl::string m_name;
-        eastl::string m_texture;
         eastl::vector<Primitive> m_primitives;
     };
 }

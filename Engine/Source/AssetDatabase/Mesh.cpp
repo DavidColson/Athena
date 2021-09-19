@@ -20,6 +20,8 @@ namespace An
         m_indices = eastl::vector<uint16_t>(copy.m_indices);
         m_topologyType = copy.m_topologyType;
         m_localBounds = copy.m_localBounds;
+        m_baseColorTexture = copy.m_baseColorTexture;
+        m_baseColor = copy.m_baseColor;
 
         CreateBuffers();
     }
@@ -35,6 +37,8 @@ namespace An
         m_indices = eastl::move(copy.m_indices);
         m_topologyType = copy.m_topologyType;
         m_localBounds = copy.m_localBounds;
+        m_baseColorTexture = copy.m_baseColorTexture;
+        m_baseColor = copy.m_baseColor;
 
         m_vertexBuffer = copy.m_vertexBuffer;
         m_uv0Buffer = copy.m_uv0Buffer;
@@ -53,6 +57,8 @@ namespace An
 
     Primitive& Primitive::operator=(const Primitive& copy)
     {
+        // TODO: If you refrain from destroying the asset on destructor, and require it be done manually or else assert,
+        // Then there is no need for copy/move constructors
         bgfx::destroy(m_vertexBuffer);
         bgfx::destroy(m_uv0Buffer);
         bgfx::destroy(m_normalsBuffer);
@@ -66,6 +72,8 @@ namespace An
         m_indices = eastl::vector<uint16_t>(copy.m_indices);
         m_topologyType = copy.m_topologyType;
         m_localBounds = copy.m_localBounds;
+        m_baseColorTexture = copy.m_baseColorTexture;
+        m_baseColor = copy.m_baseColor;
         CreateBuffers();
         
         return *this;
@@ -81,8 +89,9 @@ namespace An
         m_colors = eastl::move(copy.m_colors);
         m_indices = eastl::move(copy.m_indices);
         m_topologyType = copy.m_topologyType;
-
         m_localBounds = copy.m_localBounds;
+        m_baseColorTexture = copy.m_baseColorTexture;
+        m_baseColor = copy.m_baseColor;
 
         m_vertexBuffer = copy.m_vertexBuffer;
         m_uv0Buffer = copy.m_uv0Buffer;

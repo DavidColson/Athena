@@ -7,6 +7,7 @@
 #include "Core/AABB.h"
 #include "Core/Path.h"
 #include "Mesh.h"
+#include "Image.h"
 
 #include <bgfx/bgfx.h>
 #include <EASTL/vector.h>
@@ -16,7 +17,7 @@ namespace An
     struct Node
     {
         eastl::string m_name;
-        
+
         Node* m_pParent{ nullptr };
         eastl::vector<Node*> m_children;
 
@@ -37,6 +38,7 @@ namespace An
         Quatf m_cameraRotation;
         Vec3f m_cameraTranslation;
 
+        eastl::vector<Image> m_images;
         eastl::vector<Mesh> m_meshes;
         eastl::vector<Node> m_nodes;
     };

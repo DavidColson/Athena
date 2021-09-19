@@ -2,6 +2,7 @@
 
 #include "Core/Json.h"
 #include "Core/Base64.h"
+#include "Core/Log.h"
 
 #include <SDL_rwops.h>
 
@@ -71,7 +72,7 @@ namespace An
 
             node.m_name = jsonNode.HasKey("name") ? jsonNode["name"].ToString() : "";
             node.m_meshId = UINT32_MAX;
-
+            
             if (jsonNode.HasKey("children"))
             {
                 ParseNodesRecursively(&node, outNodes, jsonNode["children"], nodesData);
@@ -79,8 +80,8 @@ namespace An
 
             if (pParent)
             {
-                pParent->m_children.push_back(&outNodes.back());
-                outNodes.back().m_pParent = pParent;
+                pParent->m_children.push_back(&node);
+                node.m_pParent = pParent;
             }
 
             if (jsonNode.HasKey("mesh"))
@@ -217,6 +218,16 @@ namespace An
         m_nodes.reserve(parsed["nodes"].Count());
         ParseNodesRecursively(nullptr, m_nodes, parsed["scenes"][0]["nodes"], parsed["nodes"]);
 
+
+        m_images.reserve(parsed["images"].Count());
+        for (size_t i = 0; i < parsed["images"].Count(); i++)
+        {
+            JsonValue& jsonImage = parsed["images"][i];
+            eastl::string type = jsonImage["mimeType"].ToString();
+            Path imagePath = "Game/Assets/" + jsonImage["name"].ToString() + "." + type.substr(6, 4);
+            m_images.emplace_back(imagePath);
+        }
+
         m_meshes.reserve(parsed["meshes"].Count());
         for (int i = 0; i < parsed["meshes"].Count(); i++)
         {
@@ -235,6 +246,28 @@ namespace An
                     if (jsonPrimitive["mode"].ToInt() != 4)
                     {
                         return; // Unsupported topology type
+                    }
+                }
+
+                // Get material texture
+                if (jsonPrimitive.HasKey("material"))
+                {
+                    int materialId = jsonPrimitive["material"].ToInt();
+                    JsonValue& jsonMaterial = parsed["materials"][materialId];
+                    JsonValue& pbr = jsonMaterial["pbrMetallicRoughness"];
+
+                    if (pbr.HasKey("baseColorTexture"))
+                    {
+                        int textureId = pbr["baseColorTexture"]["index"].ToInt();
+                        int imageId = parsed["textures"][textureId]["source"].ToInt();
+                        prim.m_baseColorTexture = imageId;
+                    }
+                    if (pbr.HasKey("baseColorFactor"))
+                    {
+                        prim.m_baseColor.x = (float)pbr["baseColorFactor"][0].ToFloat();
+                        prim.m_baseColor.y = (float)pbr["baseColorFactor"][1].ToFloat();
+                        prim.m_baseColor.z = (float)pbr["baseColorFactor"][2].ToFloat();
+                        prim.m_baseColor.w = (float)pbr["baseColorFactor"][3].ToFloat();
                     }
                 }
 
