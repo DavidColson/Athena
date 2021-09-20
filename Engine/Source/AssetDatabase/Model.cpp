@@ -72,7 +72,7 @@ namespace An
 
             node.m_name = jsonNode.HasKey("name") ? jsonNode["name"].ToString() : "";
             node.m_meshId = UINT32_MAX;
-            
+
             if (jsonNode.HasKey("children"))
             {
                 ParseNodesRecursively(&node, outNodes, jsonNode["children"], nodesData);
@@ -219,13 +219,16 @@ namespace An
         ParseNodesRecursively(nullptr, m_nodes, parsed["scenes"][0]["nodes"], parsed["nodes"]);
 
 
-        m_images.reserve(parsed["images"].Count());
-        for (size_t i = 0; i < parsed["images"].Count(); i++)
+        if (parsed.HasKey("images"))
         {
-            JsonValue& jsonImage = parsed["images"][i];
-            eastl::string type = jsonImage["mimeType"].ToString();
-            Path imagePath = "Game/Assets/" + jsonImage["name"].ToString() + "." + type.substr(6, 4);
-            m_images.emplace_back(imagePath);
+            m_images.reserve(parsed["images"].Count());
+            for (size_t i = 0; i < parsed["images"].Count(); i++)
+            {
+                JsonValue& jsonImage = parsed["images"][i];
+                eastl::string type = jsonImage["mimeType"].ToString();
+                Path imagePath = "Game/Assets/" + jsonImage["name"].ToString() + "." + type.substr(6, 4);
+                m_images.emplace_back(imagePath);
+            }
         }
 
         m_meshes.reserve(parsed["meshes"].Count());
